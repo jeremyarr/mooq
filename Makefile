@@ -4,7 +4,7 @@ flake8:
 
 package:
 	rm -rf build dist .egg mooq.egg-info
-	python setup.py release sdist bdist_wheel
+	python3.6 setup.py release sdist bdist_wheel
 
 publish:
 	twine upload dist/*
