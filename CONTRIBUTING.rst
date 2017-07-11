@@ -1,0 +1,1 @@
+Source code for `mooq` can be found `here <https://github.com/jeremyarr/mooq>`_ . New issues, feature requests and pull requests are all welcome.
