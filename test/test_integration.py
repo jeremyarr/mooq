@@ -52,7 +52,7 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
 
         self.THEN_EchoCallback1ReceivesMsg("fake_message")
 
-    @unittest.skip("skipped")
+    # @unittest.skip("skipped")
     @close_all_threads
     def test_topic_runs_callback(self):
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
@@ -72,7 +72,7 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
 
         self.THEN_EchoCallback1ReceivesMsg("fake_message")
 
-    @unittest.skip("skipped")
+    # @unittest.skip("skipped")
     @close_all_threads
     def test_fanout_runs_callback(self):
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
