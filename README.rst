@@ -1,6 +1,6 @@
 .. image:: docs/_static/logo_full2.png
 
-.. image:: http://tactile.com.au/jenkins/buildStatus/icon?job=mooq1?junk=1
+.. image:: http://tactile.com.au/jenkins/buildStatus/icon?job=mooq1
     :target: https://github.com/jeremyarr/mooq
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
