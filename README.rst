@@ -10,7 +10,6 @@
     :target: https://github.com/jeremyarr/mooq
 
 
-
 mooq (in development)
 ========================
 
