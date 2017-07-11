@@ -6,6 +6,10 @@
 Welcome to mooq's documentation!
 ================================
 
+
+Latest Version: v |version|
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
