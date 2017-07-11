@@ -7,7 +7,8 @@ from . import base
 
 class RabbitMQBroker(base.Broker):
     def run(self):
-        subprocess.run("sudo systemctl restart rabbitmq.service",shell=True, check=True,timeout=5)
+        # subprocess.run("sudo systemctl restart rabbitmq.service",shell=True, check=True,timeout=5)
+        subprocess.run("sudo service rabbitmq-server restart",shell=True, check=True,timeout=5)
         time.sleep(20)
 
 class RabbitMQConnection(base.Connection):
