@@ -17,3 +17,5 @@ amqp made simple, over python
 
 Hold tight, no releases yet.
 
+libbil libbil
+
