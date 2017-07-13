@@ -1,4 +1,6 @@
+import threading
 
+from .resource import Resource
 
 class ExchangeNotFound(Exception):
     pass
@@ -27,6 +29,28 @@ class BrokerInternalError(Exception):
 
 broker_registry = {}
 
+def create_connection_resource(broker_obj):
+    return broker_obj.create_connection_resource()
+
+def create_channel_resource(conn_resource):
+    with conn_resource.access() as conn:
+        chan_resource = Resource(c_func=conn.channel_resource_constructor_func,
+                                 c_args=(),
+                                 c_kwargs={"conn_resource":conn_resource}) 
+
+    t = threading.Thread(target=chan_resource.box)
+    t.start()
+
+    with chan_resource.access() as chan:
+        chan.connect()
+
+    with conn_resource.access() as conn:
+        conn.channel_resources.append(chan_resource)
+
+    return chan_resource
+
+
+
 
 class Broker(object):
     def __init__(self,*,host,port):
@@ -42,6 +66,19 @@ class Broker(object):
         raise NotImplementedError
 
 
+    def _create_connection_resource(self,conn_class):
+        conn_resource = Resource(c_func=conn_class,
+                                 c_args=(),
+                                 c_kwargs={"host":self.host,"port":self.port}) 
+        t = threading.Thread(target=conn_resource.box)
+        t.start()
+        return conn_resource
+
+
+    def create_connection_resource(self):
+        raise NotImplementedError
+
+
 class Exchange(object):
     def __init__(self,*,name,type_):
         self.name = name
@@ -50,8 +87,6 @@ class Exchange(object):
 
     def bind(self,queue_name,routing_keys):
         raise NotImplementedError
-
-
 
 class Connection(object):
     def __init__(self,*,host,port):
@@ -77,6 +112,7 @@ class Connection(object):
         broker_name = "{}_{}".format(host,port)
         return broker_registry[broker_name]
 
+
 class ConsumerQueue(object):
     def __init__(self,*,name):
         self.name = name
@@ -91,7 +127,7 @@ class Channel(object):
     def __init__(self,*,conn_resource):
         self.conn_resource = conn_resource
         self.connected = True
-        self.connect()
+        # self.connect()
 
     def connect(self):
         with self.conn_resource.access() as conn:

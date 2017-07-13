@@ -10,8 +10,6 @@ from . import base
 InMemoryChannelInternal = namedtuple("InMemoryChannelInternal",["msg_q","broker_q"])
 
 
-
-
 class InMemoryBroker(base.Broker):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
@@ -40,6 +38,9 @@ class InMemoryBroker(base.Broker):
                 pass
             else:
                 self.handle_msg(msg)
+
+    def create_connection_resource(self):
+        return self._create_connection_resource(InMemoryConnection)
 
     def handle_msg(self, msg):
         try:
@@ -196,6 +197,10 @@ class InMemoryConsumerQueue(base.ConsumerQueue):
 
 
 class InMemoryConnection(base.Connection):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
+        self.channel_resource_constructor_func = InMemoryChannel
+
     def connect(self):
         self.broker = self.get_broker(host=self.host, port=self.port)
         self.msg_q = self.broker.msg_q
@@ -235,6 +240,7 @@ class InMemoryChannel(base.Channel):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self.callbacks = {}
+
 
 
     def publish(self,*,exchange_name,msg,routing_key=''):

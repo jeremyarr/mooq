@@ -14,19 +14,17 @@ sys.path.insert(0,os.path.join(here,".."))
 import mooq
 import common
 
-
-
-
-
 # @unittest.skip("skipped")
 class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.GIVEN_RabbitMQBrokerStarted("localhost",5672)
+
+
     def setUp(self):
         super().setUp()
-        self.GIVEN_BrokerStarted("rabbitmq","localhost",5672)
-        self.GIVEN_ConnectionResourceCreated(transport_type="rabbitmq", 
-                                             host="localhost",
-                                             port=5672)
-        self.GIVEN_ChannelResourceCreated(transport_type="rabbitmq")
+        self.GIVEN_ConnectionResourceCreated()
+        self.GIVEN_ChannelResourceCreated()
         self.actual = None
 
     def tearDown(self):
@@ -35,16 +33,16 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
     # @unittest.skip("skipped")
     @close_all_threads
     def test_direct_runs_callback(self):
-        self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
+        self.GIVEN_ProducerRegistered(exchange_name="fake_direct_exch",
                                       exchange_type="direct")
 
-        self.GIVEN_ConsumerRegistered(queue_name="fake_consumer_queue",
-                                      exchange_name="fake_exch",
+        self.GIVEN_ConsumerRegistered(queue_name="fake_direct_consumer_queue",
+                                      exchange_name="fake_direct_exch",
                                       exchange_type="direct",
                                       routing_keys=["fake_routing_key"],
                                       callback = self.echo_callback1)
 
-        self.GIVEN_MessagePublished(exchange_name="fake_exch",
+        self.GIVEN_MessagePublished(exchange_name="fake_direct_exch",
                                     msg="fake_message",
                                     routing_key="fake_routing_key")
 
@@ -55,16 +53,16 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
     # @unittest.skip("skipped")
     @close_all_threads
     def test_topic_runs_callback(self):
-        self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
+        self.GIVEN_ProducerRegistered(exchange_name="fake_topic_exch",
                                       exchange_type="topic")
 
-        self.GIVEN_ConsumerRegistered(queue_name="fake_consumer_queue",
-                                      exchange_name="fake_exch",
+        self.GIVEN_ConsumerRegistered(queue_name="fake_topic_consumer_queue",
+                                      exchange_name="fake_topic_exch",
                                       exchange_type="topic",
                                       routing_keys=["*.red","ball.*"],
                                       callback = self.echo_callback1)
 
-        self.GIVEN_MessagePublished(exchange_name="fake_exch",
+        self.GIVEN_MessagePublished(exchange_name="fake_topic_exch",
                                     msg="fake_message",
                                     routing_key="apple.red")
 
@@ -75,22 +73,22 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
     # @unittest.skip("skipped")
     @close_all_threads
     def test_fanout_runs_callback(self):
-        self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
+        self.GIVEN_ProducerRegistered(exchange_name="fake_fanout_exch",
                                       exchange_type="fanout")
 
-        self.GIVEN_ConsumerRegistered(queue_name="fake_consumer_queue1",
-                                      exchange_name="fake_exch",
+        self.GIVEN_ConsumerRegistered(queue_name="fake_fanout_consumer_queue1",
+                                      exchange_name="fake_fanout_exch",
                                       exchange_type="fanout",
                                       routing_keys=[""],
                                       callback = self.echo_callback1)
 
-        self.GIVEN_ConsumerRegistered(queue_name="fake_consumer_queue2",
-                                      exchange_name="fake_exch",
+        self.GIVEN_ConsumerRegistered(queue_name="fake_fanout_consumer_queue2",
+                                      exchange_name="fake_fanout_exch",
                                       exchange_type="fanout",
                                       routing_keys=[""],
                                       callback = self.echo_callback2)
 
-        self.GIVEN_MessagePublished(exchange_name="fake_exch",
+        self.GIVEN_MessagePublished(exchange_name="fake_fanout_exch",
                                     msg="fake_message",
                                     routing_key="")
 

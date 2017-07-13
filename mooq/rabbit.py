@@ -2,16 +2,30 @@ import pika
 import subprocess
 import time
 import json
+import threading
 
 from . import base
 
+
 class RabbitMQBroker(base.Broker):
     def run(self):
-        # subprocess.run("sudo systemctl restart rabbitmq.service",shell=True, check=True,timeout=5)
-        subprocess.run("sudo service rabbitmq-server restart",shell=True, check=True,timeout=5)
+        pass
+        #arch
+        subprocess.run("sudo systemctl restart rabbitmq.service",shell=True, check=True,timeout=5)
+
+        # #ubuntu
+        # # subprocess.run("sudo service rabbitmq-server restart",shell=True, check=True,timeout=5)
         time.sleep(20)
 
+    def create_connection_resource(self):
+        return self._create_connection_resource(RabbitMQConnection)
+
+
 class RabbitMQConnection(base.Connection):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
+        self.channel_resource_constructor_func = RabbitMQChannel
+
     def connect(self):
         cp = pika.ConnectionParameters(host=self.host, port=self.port)
         self._conn = pika.BlockingConnection(cp)
