@@ -102,7 +102,7 @@ class DirectBadExchangeTest(common.TransportTestCase):
     def setUp(self):
         super().setUp()
         self.GIVEN_InMemoryBrokerStarted("localhost",1234)
-        self.GIVEN_ConnectionResourceCreated()
+        self.GIVEN_ConnectionResourceCreated("localhost",1234,"in_memory")
         self.GIVEN_ChannelResourceCreated()
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
                                       exchange_type="direct")
@@ -125,7 +125,7 @@ class InMemoryDirectProduceConsumeTest(common.TransportTestCase):
     def setUp(self):
         super().setUp()
         self.GIVEN_InMemoryBrokerStarted("localhost",1234)
-        self.GIVEN_ConnectionResourceCreated()
+        self.GIVEN_ConnectionResourceCreated("localhost",1234,"in_memory")
         self.GIVEN_ChannelResourceCreated()
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
                                       exchange_type="direct")
@@ -239,7 +239,7 @@ class TopicTestCase(common.TransportTestCase):
     def setUp(self):
         super().setUp()
         self.GIVEN_InMemoryBrokerStarted("localhost",1234)
-        self.GIVEN_ConnectionResourceCreated()
+        self.GIVEN_ConnectionResourceCreated("localhost",1234,"in_memory")
         self.GIVEN_ChannelResourceCreated()
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
                                       exchange_type="topic")
@@ -361,7 +361,7 @@ class FanoutTestCase(common.TransportTestCase):
     def setUp(self):
         super().setUp()
         self.GIVEN_InMemoryBrokerStarted("localhost",1234)
-        self.GIVEN_ConnectionResourceCreated()
+        self.GIVEN_ConnectionResourceCreated("localhost",1234,"in_memory")
         self.GIVEN_ChannelResourceCreated()
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
                                       exchange_type="fanout")
@@ -403,7 +403,7 @@ class ExchangeDoesntExistTest(common.TransportTestCase):
     def setUp(self):
         super().setUp()
         self.GIVEN_InMemoryBrokerStarted("localhost",1234)
-        self.GIVEN_ConnectionResourceCreated()
+        self.GIVEN_ConnectionResourceCreated("localhost",1234,"in_memory")
         self.GIVEN_ChannelResourceCreated()
 
     @clear_test_hang_alarm

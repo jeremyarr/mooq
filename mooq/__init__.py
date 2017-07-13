@@ -8,9 +8,7 @@ from .base import ExchangeNotFound, \
                   ConsumeTimeout, \
                   NothingToConsume, \
                   BadExchange, \
-                  BrokerInternalError, \
-                  create_connection_resource, \
-                  create_channel_resource
+                  BrokerInternalError
 
 from .in_memory import InMemoryBroker, \
                        InMemoryExchange, \
@@ -23,6 +21,9 @@ from .in_memory import InMemoryBroker, \
 from .rabbit import RabbitMQBroker, \
                     RabbitMQConnection, \
                     RabbitMQChannel
+
+from .resource_factory import connection as create_connection_resource
+from .resource_factory import channel as create_channel_resource
 
 def one_plus_one():
     return 2

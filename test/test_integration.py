@@ -23,7 +23,7 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
 
     def setUp(self):
         super().setUp()
-        self.GIVEN_ConnectionResourceCreated()
+        self.GIVEN_ConnectionResourceCreated("localhost",5672,"rabbit")
         self.GIVEN_ChannelResourceCreated()
         self.actual = None
 

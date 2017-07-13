@@ -24,9 +24,12 @@ class TransportTestCase(unittest.TestCase):
         cls.broker = mooq.RabbitMQBroker(host=host,port=port)
         cls.broker.run()
 
-    def GIVEN_ConnectionResourceCreated(self):
+    def GIVEN_ConnectionResourceCreated(self,host,port,broker_type):
+        self.conn_resource = mooq.create_connection_resource(broker=broker_type,
+                                                            host=host,
+                                                            port=port)
 
-        self.conn_resource = mooq.create_connection_resource(self.broker)
+        # self.conn_resource = mooq.create_connection_resource(self.broker)
 
         self.threads_to_close.append(self.conn_resource)
 
