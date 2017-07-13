@@ -96,14 +96,12 @@ class ResourceAccessTest(GWTTestCase):
                               "kwargs":{}}
 
 
-
-
 # @unittest.skip("skipped")
 class DirectBadExchangeTest(common.TransportTestCase):
     @set_test_hang_alarm
     def setUp(self):
         super().setUp()
-        self.GIVEN_BrokerStarted("in_memory","localhost",1234)
+        self.GIVEN_InMemoryBrokerStarted("localhost",1234)
         self.GIVEN_ConnectionResourceCreated()
         self.GIVEN_ChannelResourceCreated()
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
@@ -126,7 +124,7 @@ class InMemoryDirectProduceConsumeTest(common.TransportTestCase):
     @set_test_hang_alarm
     def setUp(self):
         super().setUp()
-        self.GIVEN_BrokerStarted("in_memory","localhost",1234)
+        self.GIVEN_InMemoryBrokerStarted("localhost",1234)
         self.GIVEN_ConnectionResourceCreated()
         self.GIVEN_ChannelResourceCreated()
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
@@ -240,7 +238,7 @@ class TopicTestCase(common.TransportTestCase):
     @set_test_hang_alarm
     def setUp(self):
         super().setUp()
-        self.GIVEN_BrokerStarted("in_memory","localhost",1234)
+        self.GIVEN_InMemoryBrokerStarted("localhost",1234)
         self.GIVEN_ConnectionResourceCreated()
         self.GIVEN_ChannelResourceCreated()
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
@@ -362,7 +360,7 @@ class FanoutTestCase(common.TransportTestCase):
     @set_test_hang_alarm
     def setUp(self):
         super().setUp()
-        self.GIVEN_BrokerStarted("in_memory","localhost",1234)
+        self.GIVEN_InMemoryBrokerStarted("localhost",1234)
         self.GIVEN_ConnectionResourceCreated()
         self.GIVEN_ChannelResourceCreated()
         self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
@@ -404,7 +402,7 @@ class ExchangeDoesntExistTest(common.TransportTestCase):
     @set_test_hang_alarm
     def setUp(self):
         super().setUp()
-        self.GIVEN_BrokerStarted("in_memory","localhost",1234)
+        self.GIVEN_InMemoryBrokerStarted("localhost",1234)
         self.GIVEN_ConnectionResourceCreated()
         self.GIVEN_ChannelResourceCreated()
 

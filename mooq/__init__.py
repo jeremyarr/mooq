@@ -1,13 +1,3 @@
-from collections import namedtuple
-import queue
-from contextlib import contextmanager
-import uuid
-import traceback
-import pika
-import json
-import re
-import subprocess
-import time
 
 from .__version__ import __version__
 from .resource import Resource, ResourceNotAvailable
@@ -18,7 +8,9 @@ from .base import ExchangeNotFound, \
                   ConsumeTimeout, \
                   NothingToConsume, \
                   BadExchange, \
-                  BrokerInternalError
+                  BrokerInternalError, \
+                  create_connection_resource, \
+                  create_channel_resource
 
 from .in_memory import InMemoryBroker, \
                        InMemoryExchange, \
