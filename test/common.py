@@ -46,6 +46,20 @@ class TransportTestCase(unittest.TestCase):
     def WHEN_ProducerRegistered(self,*args,**kwargs):
         self.GIVEN_ProducerRegistered(*args,**kwargs)
 
+
+    def GIVEN_MessagePublished(self, *, exchange_name,msg,routing_key):
+        with self.chan_resource.access() as chan:
+            chan.publish(exchange_name=exchange_name,
+                         msg=msg,
+                         routing_key=routing_key)
+        #wait for broker to receive messages
+        time.sleep(0.005)
+
+    def WHEN_MessagePublished(self,*args,**kwargs):
+        self.GIVEN_MessagePublished(*args,**kwargs)
+
+
+
     def GIVEN_ConsumerRegistered(self,*,queue_name,exchange_name,exchange_type,
                                  routing_keys,callback):
 
@@ -63,16 +77,7 @@ class TransportTestCase(unittest.TestCase):
 
 
 
-    def GIVEN_MessagePublished(self, *, exchange_name,msg,routing_key):
-        with self.chan_resource.access() as chan:
-            chan.publish(exchange_name=exchange_name,
-                         msg=msg,
-                         routing_key=routing_key)
-        #wait for broker to receive messages
-        time.sleep(0.005)
 
-    def WHEN_MessagePublished(self,*args,**kwargs):
-        self.GIVEN_MessagePublished(*args,**kwargs)
 
     def WHEN_ProcessEventsNTimes(self,n):
         with self.conn_resource.access() as conn:
