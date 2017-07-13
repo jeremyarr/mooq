@@ -11,10 +11,10 @@ class RabbitMQBroker(base.Broker):
     def run(self):
         pass
         #arch
-        # subprocess.run("sudo systemctl restart rabbitmq.service",shell=True, check=True,timeout=5)
+        subprocess.run("sudo systemctl restart rabbitmq.service",shell=True, check=True,timeout=5)
 
         # #ubuntu
-        subprocess.run("sudo service rabbitmq-server restart",shell=True, check=True,timeout=5)
+        # subprocess.run("sudo service rabbitmq-server restart",shell=True, check=True,timeout=5)
         time.sleep(20)
 
     def create_connection_resource(self):
