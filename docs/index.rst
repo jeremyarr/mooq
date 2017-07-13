@@ -26,6 +26,7 @@ Latest Version: v |version|
 
 `mooq <https://github.com/jeremyarr/jenkins_badges>`_ is a thread-safe library for interacting with an AMQP broker such as `RabbitMQ <https://www.rabbitmq.com/tutorials/tutorial-one-python.html>`_ in a simple, pythonic way.
 
+
 Features
 ----------
 
@@ -35,61 +36,12 @@ Features
 - Contains an implementation of an "in memory" broker to assist in unit testing projects that depend on AMQP
 - Designed for thread safe use of AMQP connections and channels.
 
-
-Get it now
------------
-
-With pip:
-**********
-
-.. code-block:: bash
-
-    $ pip install mooq
-
-
-
-
 Just mooq it
 --------------
-
-Producer:
-
-.. code-block:: python
-
-    #example consumer in "Just mooq it" section of docs
-
-    # producer.py
-
-    import mooq
-
-    conn_resource = mooq.create_connection_resource(host="localhost",
-                                                    port=5672,
-                                                    broker="rabbit")
-
-    chan_resource = mooq.create_channel_resource(conn_resource)
-
-    #the channel is only able to be used within the context manager
-    #this prevents two threads communicating on the same 
-    #channel at the same time.
-    with chan_resource.access() as chan:
-        chan.register_producer(exchange_name="log",
-                               exchange_type="direct")
-
-        chan.publish(exchange_name="log",
-                     msg="Hello World!",
-                     routing_key="greetings")
-        print("published!")
-
-    #resources must be closed after use
-    conn_resource.close()
-    chan_resource.close()
-
 
 Consumer:
 
 .. code-block:: python
-
-    #example consumer in "Just mooq it" section of docs
 
     #consumer.py
 
@@ -135,22 +87,109 @@ Consumer:
 
 
 
+Producer:
+
+.. code-block:: python
+
+    # producer.py
+
+    import mooq
+
+    conn_resource = mooq.create_connection_resource(host="localhost",
+                                                    port=5672,
+                                                    broker="rabbit")
+
+    chan_resource = mooq.create_channel_resource(conn_resource)
+
+    #the channel is only able to be used within the context manager
+    #this prevents two threads communicating on the same 
+    #channel at the same time.
+    with chan_resource.access() as chan:
+        chan.register_producer(exchange_name="log",
+                               exchange_type="direct")
+
+        chan.publish(exchange_name="log",
+                     msg="Hello World!",
+                     routing_key="greetings")
+        print("published!")
+
+    #resources must be closed after use
+    conn_resource.close()
+    chan_resource.close()
 
 
+Terminal 1:
+
+.. code-block:: bash
+    
+    $ python consumer.py
+
+.. code-block:: console
+
+    waiting for first event:
+    HELLO WORLD!
 
 
+Terminal 2:
 
+.. code-block:: bash
+    
+    $ python producer.py
 
+.. code-block:: console
 
+    published!
 
-
-
-
-
+User Guide
+-----------
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   introduction
+   installation
+   quickstart
+   advanced_usage
+   unit_testing
+   examples
+   api
+   changelog
+   license
+   authors
+   kudos
+
+
+
+Get it now
+-----------
+
+With pip:
+**********
+
+.. code-block:: bash
+
+    $ pip install mooq
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
