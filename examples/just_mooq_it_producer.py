@@ -17,3 +17,22 @@ chan.publish(exchange_name="log",
              routing_key="greetings")
 
 print("published!")
+
+
+# #ideal API
+
+# async def main():
+#     conn = await mooq.connect(host="localhost",
+#                               port=5672,
+#                               broker="rabbit")
+#     chan = await conn.create_channel()
+
+#     await chan.register_producer(exchange_name="log",
+#                                  exchange_type="direct")
+
+#     await chan.publish(exchange_name="log",
+#                        msg="Hello World!",
+#                        routing_key="greetings")
+
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(main())
