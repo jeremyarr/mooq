@@ -1,125 +1,19 @@
 import unittest
 from unittest.mock import Mock
-from .unittest_utils import set_test_hang_alarm, clear_test_hang_alarm, close_all_threads
-from .unittest_utils import GWTTestCase
-import xmlrunner
-
-import threading
 import os
 import sys
 
-here = os.path.abspath(os.path.dirname(__file__))
-print("here is {}".format(here))
-sys.path.insert(0,os.path.join(here,".."))
+import xmlrunner
+
+from test import common
+from test.unittest_utils import set_test_hang_alarm
+from test.unittest_utils import clear_test_hang_alarm
+from test.unittest_utils import close_all_threads
 
 import mooq
-from . import common
 
 
-# @unittest.skip("skipped")
-class ResourceAccessTest(GWTTestCase):
-    @set_test_hang_alarm
-    def setUp(self):
-        self.threads_to_close = []
-
-    @clear_test_hang_alarm
-    def tearDown(self):
-        pass
-
-    # @unittest.skip("skipped")
-    @close_all_threads
-    def test_resource_accessed_through_context_manager(self):
-
-        def fake_resource_constructor_func(a,b,c=7):
-            return [a,b,c]
-
-        r = mooq.Resource(
-                            c_func=fake_resource_constructor_func,
-                            c_args=(1,2),
-                            c_kwargs={"c":99})
-
-        self.GIVEN_resource_box_started(r)
-        self.GIVEN_expect("resource retrieved to be",[1,2,99])
-
-        self.WHEN_access_resource_through_context_manager()
-
-        self.THEN_ExpectedActualMatch("resource retrieved")
-
-    # @unittest.skip("skipped")
-    @close_all_threads
-    def test_resource_accessed_through_context_manager_no_constructor_args_kwargs(self):
-
-        def fake_resource_constructor_func():
-            return [99]
-
-        r = mooq.Resource(c_func=fake_resource_constructor_func)
-
-        self.GIVEN_resource_box_started(r)
-        self.GIVEN_expect("resource retrieved to be",[99])
-
-        self.WHEN_access_resource_through_context_manager()
-
-        self.THEN_ExpectedActualMatch("resource retrieved")
-
-    # @unittest.skip("skipped")
-    @close_all_threads
-    def test_resource_accessed_through_context_manager_timeout(self):
-
-        def fake_resource_constructor_func():
-            return [99]
-
-        r = mooq.Resource(c_func=fake_resource_constructor_func)
-
-        self.GIVEN_resource_box_started(r)
-
-        self.WHEN_access_of_resource_is_nested()
-
-        self.THEN_exception_occurs(mooq.ResourceNotAvailable)
-
-    def GIVEN_resource_box_started(self, r):
-        self.resource_obj = r
-        t = threading.Thread(target=self.resource_obj.box)
-        t.start()
-        self.threads_to_close.append(self.resource_obj)
-
-    def WHEN_access_resource_through_context_manager(self):
-        with self.resource_obj.access() as r:
-            self.actual = r
-
-    def WHEN_access_of_resource_is_nested(self):
-        def func_to_check(self):
-            with self.resource_obj.access() as x:
-                with self.resource_obj.access(timeout=0.1) as y:
-                    pass
-        self.func_to_check = {"func":func_to_check,
-                              "args":(self,),
-                              "kwargs":{}}
-
-
-# @unittest.skip("skipped")
-class DirectBadExchangeTest(common.TransportTestCase):
-    @set_test_hang_alarm
-    def setUp(self):
-        super().setUp()
-        self.GIVEN_InMemoryBrokerStarted("localhost",1234)
-        self.GIVEN_ConnectionResourceCreated("localhost",1234,"in_memory")
-        self.GIVEN_ChannelResourceCreated()
-        self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
-                                      exchange_type="direct")
-
-    @clear_test_hang_alarm
-    def tearDown(self):
-        super().tearDown()
-
-    # @unittest.skip("skipped")
-    @close_all_threads
-    def test_bad_exchange(self):
-        with self.assertRaises(mooq.BadExchange):
-            self.WHEN_ProducerRegistered(exchange_name="fake_exch",
-                                          exchange_type="fanout")
-
-
-# @unittest.skip("skipped")
+# @unittest.skip("skipped") 
 class InMemoryDirectProduceConsumeTest(common.TransportTestCase):
     @set_test_hang_alarm
     def setUp(self):
@@ -234,6 +128,30 @@ class InMemoryDirectProduceConsumeTest(common.TransportTestCase):
 
 
 
+
+# @unittest.skip("skipped") 
+class DirectBadExchangeTest(common.TransportTestCase):
+    @set_test_hang_alarm
+    def setUp(self):
+        super().setUp()
+        self.GIVEN_InMemoryBrokerStarted("localhost",1234)
+        self.GIVEN_ConnectionResourceCreated("localhost",1234,"in_memory")
+        self.GIVEN_ChannelResourceCreated()
+        self.GIVEN_ProducerRegistered(exchange_name="fake_exch",
+                                      exchange_type="direct")
+
+    @clear_test_hang_alarm
+    def tearDown(self):
+        super().tearDown()
+
+    # @unittest.skip("skipped")
+    @close_all_threads
+    def test_bad_exchange(self):
+        with self.assertRaises(mooq.BadExchange):
+            self.WHEN_ProducerRegistered(exchange_name="fake_exch",
+                                          exchange_type="fanout")
+
+
 class TopicTestCase(common.TransportTestCase):
     @set_test_hang_alarm
     def setUp(self):
@@ -250,7 +168,8 @@ class TopicTestCase(common.TransportTestCase):
 
 
 
-# @unittest.skip("skipped")
+
+# @unittest.skip("skipped") 
 class InMemoryTopicBallColourTest(TopicTestCase):
     def setUp(self):
         super().setUp()
@@ -304,7 +223,7 @@ class InMemoryTopicBallColourTest(TopicTestCase):
         self.GWT_BallColour(routing_key=routing_key,callback_run=False)
 
 
-# @unittest.skip("skipped")
+# @unittest.skip("skipped") 
 class InMemoryTopicAllWildcardsTest(TopicTestCase):
     def setUp(self):
         super().setUp()
@@ -330,7 +249,7 @@ class InMemoryTopicAllWildcardsTest(TopicTestCase):
         self.THEN_CallbackIsRun(self.fake_callback)
 
 
-# @unittest.skip("skipped")
+# @unittest.skip("skipped") 
 class InMemoryTopicRunTwiceTest(TopicTestCase):
     def setUp(self):
         super().setUp()
@@ -355,7 +274,7 @@ class InMemoryTopicRunTwiceTest(TopicTestCase):
 
         self.THEN_CallbackIsRun(self.fake_callback,num_times=2)
 
-# @unittest.skip("skipped")
+# @unittest.skip("skipped") 
 class FanoutTestCase(common.TransportTestCase):
     @set_test_hang_alarm
     def setUp(self):
@@ -397,7 +316,7 @@ class FanoutTestCase(common.TransportTestCase):
         self.THEN_CallbackIsRun(self.fake_callback2)
 
 
-# @unittest.skip("skipped")
+# @unittest.skip("skipped") 
 class ExchangeDoesntExistTest(common.TransportTestCase):
     @set_test_hang_alarm
     def setUp(self):

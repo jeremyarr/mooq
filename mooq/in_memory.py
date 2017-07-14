@@ -39,8 +39,6 @@ class InMemoryBroker(base.Broker):
             else:
                 self.handle_msg(msg)
 
-    def create_connection_resource(self):
-        return self._create_connection_resource(InMemoryConnection)
 
     def handle_msg(self, msg):
         try:
@@ -164,9 +162,6 @@ class InMemoryBroker(base.Broker):
 
 
 
-
-
-
 class InMemoryExchange(base.Exchange):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
@@ -195,36 +190,39 @@ class InMemoryConsumerQueue(base.ConsumerQueue):
         self._q.put(data)
 
 
-
 class InMemoryConnection(base.Connection):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
-        self.channel_resource_constructor_func = InMemoryChannel
 
     def connect(self):
         self.broker = self.get_broker(host=self.host, port=self.port)
         self.msg_q = self.broker.msg_q
         self.broker_q = self.broker.broker_q
     
+    @base.lock_connection
     def create_channel(self):
-        return InMemoryChannelInternal(msg_q=self.msg_q,broker_q=self.broker_q)
+        internal_chan = InMemoryChannelInternal(msg_q=self.msg_q,broker_q=self.broker_q)
+
+        chan = InMemoryChannel(internal_chan=internal_chan)
+        self.channels.append(chan)
+        return chan
+
 
     def close(self):
         self.connected = False
 
     def process_events(self,num_cycles=None):
         while True:
-            for chan_resource in self.channel_resources:
-                with chan_resource.access() as chan:
-                    for queue_name,callback in chan.callbacks.items():
-                        cq = self.broker.get_consumer_queue(queue_name)
+            for chan in self.channels:
+                for queue_name,callback in chan.callbacks.items():
+                    cq = self.broker.get_consumer_queue(queue_name)
 
-                        try:
-                            msg_dict = cq.get_next_message()
-                        except base.ConsumeTimeout:
-                            pass
-                        else:
-                            callback(msg_dict)
+                    try:
+                        msg_dict = cq.get_next_message()
+                    except base.ConsumeTimeout:
+                        pass
+                    else:
+                        callback(msg_dict)
 
             if num_cycles is not None:
                 num_cycles = num_cycles - 1
@@ -232,17 +230,12 @@ class InMemoryConnection(base.Connection):
                     break
 
 
-
-
-
-
 class InMemoryChannel(base.Channel):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self.callbacks = {}
 
-
-
+    @base.lock_channel
     def publish(self,*,exchange_name,msg,routing_key=''):
         self._chan.msg_q.put(
                         {
@@ -255,7 +248,7 @@ class InMemoryChannel(base.Channel):
 
         self._handle_broker_responses()
 
-
+    @base.lock_channel
     def register_producer(self, *, exchange_name, exchange_type):
         self._chan.msg_q.put(
                         {
@@ -267,6 +260,7 @@ class InMemoryChannel(base.Channel):
 
         self._handle_broker_responses()
 
+    @base.lock_channel
     def register_consumer(self, *, exchange_name, exchange_type, 
                          queue_name, callback, routing_keys=[""]):
 
@@ -296,7 +290,6 @@ class InMemoryChannel(base.Channel):
             else:
                 if resp['response'] == "error":
                     raise resp['error'](resp['msg'])
-
 
 
 
