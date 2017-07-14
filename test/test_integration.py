@@ -1,18 +1,12 @@
 import unittest
-from unittest_utils import close_all_threads
-import xmlrunner
-
 import os
 import json
-import os
 import sys
 
-here = os.path.abspath(os.path.dirname(__file__))
-print("here is {}".format(here))
-sys.path.insert(0,os.path.join(here,".."))
+import xmlrunner
 
 import mooq
-import common
+from test import common
 
 # @unittest.skip("skipped")
 class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
@@ -20,18 +14,17 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
     def setUpClass(cls):
         cls.GIVEN_RabbitMQBrokerStarted("localhost",5672)
 
-
     def setUp(self):
         super().setUp()
         self.GIVEN_ConnectionResourceCreated("localhost",5672,"rabbit")
         self.GIVEN_ChannelResourceCreated()
-        self.actual = None
+        self.actual1 = None
+        self.actual2 = None
 
     def tearDown(self):
         super().tearDown()
 
     # @unittest.skip("skipped")
-    @close_all_threads
     def test_direct_runs_callback(self):
         self.GIVEN_ProducerRegistered(exchange_name="fake_direct_exch",
                                       exchange_type="direct")
@@ -51,7 +44,6 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
         self.THEN_EchoCallback1ReceivesMsg("fake_message")
 
     # @unittest.skip("skipped")
-    @close_all_threads
     def test_topic_runs_callback(self):
         self.GIVEN_ProducerRegistered(exchange_name="fake_topic_exch",
                                       exchange_type="topic")
@@ -71,7 +63,6 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
         self.THEN_EchoCallback1ReceivesMsg("fake_message")
 
     # @unittest.skip("skipped")
-    @close_all_threads
     def test_fanout_runs_callback(self):
         self.GIVEN_ProducerRegistered(exchange_name="fake_fanout_exch",
                                       exchange_type="fanout")
@@ -102,15 +93,13 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
         self.assertEqual(expected,self.actual1)
 
     def THEN_EchoCallback2ReceivesMsg(self,expected):
-        self.assertEqual(expected,self.actual1)
+        self.assertEqual(expected,self.actual2)
 
-    def echo_callback1(self,ch,meth,prop,body):
-        msg = json.loads(body)
-        self.actual1 = msg
+    def echo_callback1(self,resp):
+        self.actual1 = resp['msg']
 
-    def echo_callback2(self,ch,meth,prop,body):
-        msg = json.loads(body)
-        self.actual2 = msg
+    def echo_callback2(self,resp):
+        self.actual2 = resp['msg']
 
 if __name__ == '__main__':
     unittest.main(

@@ -2,7 +2,6 @@ import unittest
 import threading
 import time
 
-
 import mooq
 
 class TransportTestCase(unittest.TestCase):
@@ -25,36 +24,25 @@ class TransportTestCase(unittest.TestCase):
         cls.broker.run()
 
     def GIVEN_ConnectionResourceCreated(self,host,port,broker_type):
-        self.conn_resource = mooq.create_connection_resource(broker=broker_type,
-                                                            host=host,
-                                                            port=port)
-
-        # self.conn_resource = mooq.create_connection_resource(self.broker)
-
-        self.threads_to_close.append(self.conn_resource)
+        self.conn = mooq.connect(broker=broker_type,
+                                            host=host,
+                                            port=port)
 
     def GIVEN_ChannelResourceCreated(self):
-
-        self.chan_resource = mooq.create_channel_resource(self.conn_resource)
-
-        self.threads_to_close.append(self.chan_resource)
-
-
+        self.chan = self.conn.create_channel()
 
     def GIVEN_ProducerRegistered(self,*,exchange_name,exchange_type):
-        with self.chan_resource.access() as chan:
-            chan.register_producer(exchange_name=exchange_name,
-                                   exchange_type=exchange_type)
+        self.chan.register_producer(exchange_name=exchange_name,
+                                    exchange_type=exchange_type)
 
     def WHEN_ProducerRegistered(self,*args,**kwargs):
         self.GIVEN_ProducerRegistered(*args,**kwargs)
 
 
     def GIVEN_MessagePublished(self, *, exchange_name,msg,routing_key):
-        with self.chan_resource.access() as chan:
-            chan.publish(exchange_name=exchange_name,
-                         msg=msg,
-                         routing_key=routing_key)
+        self.chan.publish(exchange_name=exchange_name,
+                          msg=msg,
+                          routing_key=routing_key)
         #wait for broker to receive messages
         time.sleep(0.005)
 
@@ -66,12 +54,11 @@ class TransportTestCase(unittest.TestCase):
     def GIVEN_ConsumerRegistered(self,*,queue_name,exchange_name,exchange_type,
                                  routing_keys,callback):
 
-        with self.chan_resource.access() as chan:
-            chan.register_consumer( queue_name=queue_name,
-                                    exchange_name=exchange_name,
-                                    exchange_type=exchange_type,
-                                    routing_keys=routing_keys,
-                                    callback = callback)
+        self.chan.register_consumer( queue_name=queue_name,
+                                exchange_name=exchange_name,
+                                exchange_type=exchange_type,
+                                routing_keys=routing_keys,
+                                callback = callback)
         #wait for broker to receive messages
         time.sleep(0.005)
 
@@ -83,12 +70,10 @@ class TransportTestCase(unittest.TestCase):
 
 
     def WHEN_ProcessEventsNTimes(self,n):
-        with self.conn_resource.access() as conn:
-            conn.process_events(num_cycles=n)
+        self.conn.process_events(num_cycles=n)
 
     def WHEN_ProcessEventsOnce(self):
-        with self.conn_resource.access() as conn:
-            conn.process_events(num_cycles=1)
+        self.conn.process_events(num_cycles=1)
 
     def THEN_CallbackIsRun(self,cb,num_times=1):
         self.assertEqual(num_times,cb.call_count)

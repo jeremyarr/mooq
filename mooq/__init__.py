@@ -1,6 +1,9 @@
+'''
+This is a mooq
+'''
 
 from .__version__ import __version__
-from .resource import Resource, ResourceNotAvailable
+
 from . import base
 
 from .base import ExchangeNotFound, \
@@ -22,8 +25,15 @@ from .rabbit import RabbitMQBroker, \
                     RabbitMQConnection, \
                     RabbitMQChannel
 
-from .resource_factory import connection as create_connection_resource
-from .resource_factory import channel as create_channel_resource
 
-def one_plus_one():
-    return 2
+def connect(host="localhost",port=5672,broker="rabbit"):
+    '''
+    create a connection resource
+    '''
+
+    if broker == "in_memory":
+        return InMemoryConnection(host=host,port=port)
+    elif broker == "rabbit":
+        return RabbitMQConnection(host=host,port=port)
+    else:
+        raise NotImplementedError

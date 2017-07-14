@@ -2,23 +2,22 @@ import pika
 import subprocess
 import time
 import json
-import threading
+import os
+from functools import wraps
 
 from . import base
 
 
 class RabbitMQBroker(base.Broker):
     def run(self):
-        pass
-        #arch
-        # subprocess.run("sudo systemctl restart rabbitmq.service",shell=True, check=True,timeout=5)
+        if os.environ["TEST_DISTRIBUTION"] == "arch":
+            subprocess.run("sudo systemctl restart rabbitmq.service",shell=True, check=True,timeout=5)
+        elif os.environ["TEST_DISTRIBUTION"] == "ubuntu":
+            subprocess.run("sudo service rabbitmq-server restart",shell=True, check=True,timeout=5)
+        else:
+            raise ValueError("TEST_DISTRIBUTION environmental variable not set to either arch or ubuntu")
 
-        # #ubuntu
-        subprocess.run("sudo service rabbitmq-server restart",shell=True, check=True,timeout=5)
         time.sleep(20)
-
-    def create_connection_resource(self):
-        return self._create_connection_resource(RabbitMQConnection)
 
 
 class RabbitMQConnection(base.Connection):
@@ -30,15 +29,22 @@ class RabbitMQConnection(base.Connection):
         cp = pika.ConnectionParameters(host=self.host, port=self.port)
         self._conn = pika.BlockingConnection(cp)
 
+    @base.lock_connection
     def create_channel(self):
-        return self._conn.channel()
+        internal_chan = self._conn.channel()
+
+        chan = RabbitMQChannel(internal_chan=internal_chan)
+        self.channels.append(chan)
+        return chan
 
     def close(self):
         raise NotImplementedError
 
     def process_events(self,num_cycles=None):
         while True:
-            self._conn.process_data_events(time_limit=0.5)
+            with self.conn_lock:
+                self._conn.process_data_events(time_limit=0.1)
+
             if num_cycles is not None:
                 num_cycles = num_cycles - 1
                 if num_cycles == 0:
@@ -47,10 +53,12 @@ class RabbitMQConnection(base.Connection):
 
 class RabbitMQChannel(base.Channel):
 
+    @base.lock_channel
     def register_producer(self, *, exchange_name, exchange_type):
         self._chan.exchange_declare(exchange=exchange_name,
                                     type=exchange_type)
 
+    @base.lock_channel
     def register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, routing_keys=[""]):
         self._chan.exchange_declare(exchange=exchange_name,
                                     type=exchange_type)
@@ -68,13 +76,25 @@ class RabbitMQChannel(base.Channel):
                                   queue = queue_name,
                                   routing_key = r)
 
-        self._chan.basic_consume(callback,
+        pika_callback = self.wrap_callback(callback)
+        self._chan.basic_consume(pika_callback,
                                  queue = queue_name,
                                  no_ack = True,
                                  exclusive = exclusive,
                                  consumer_tag = None,
                                  arguments = None)
 
+    def wrap_callback(self,func):
+        @wraps(func)
+        def inner(ch,meth,prop,body):
+            resp = {
+                     "msg": json.loads(body),
+                   }
+            return func(resp)
+
+        return inner
+
+    @base.lock_channel
     def publish(self,*,exchange_name, msg, routing_key=''):
         to_send_json = json.dumps(msg)
         self._chan.basic_publish(exchange=exchange_name,

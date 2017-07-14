@@ -1,6 +1,5 @@
 import threading
-
-from .resource import Resource
+from functools import wraps
 
 class ExchangeNotFound(Exception):
     pass
@@ -24,11 +23,6 @@ class BrokerInternalError(Exception):
 
 broker_registry = {}
 
-
-
-
-
-
 class Broker(object):
     def __init__(self,*,host,port):
         self.host = host
@@ -40,19 +34,6 @@ class Broker(object):
         raise NotImplementedError
 
     def run(self):
-        raise NotImplementedError
-
-
-    def _create_connection_resource(self,conn_class):
-        conn_resource = Resource(c_func=conn_class,
-                                 c_args=(),
-                                 c_kwargs={"host":self.host,"port":self.port}) 
-        t = threading.Thread(target=conn_resource.box)
-        t.start()
-        return conn_resource
-
-
-    def create_connection_resource(self):
         raise NotImplementedError
 
 
@@ -69,9 +50,10 @@ class Connection(object):
     def __init__(self,*,host,port):
         self.host = host
         self.port = port
+        self.conn_lock = TimeoutRLock(1)
         self.connect()
         self.connected = True
-        self.channel_resources = []
+        self.channels = []
 
     def create_channel(self):
         raise NotImplementedError
@@ -101,14 +83,9 @@ class ConsumerQueue(object):
         raise NotImplementedError
 
 class Channel(object):
-    def __init__(self,*,conn_resource):
-        self.conn_resource = conn_resource
-        self.connected = True
-        # self.connect()
-
-    def connect(self):
-        with self.conn_resource.access() as conn:
-            self._chan = conn.create_channel()
+    def __init__(self,*,internal_chan):
+        self._chan = internal_chan
+        self.chan_lock = TimeoutRLock(1)
 
     def register_producer(self, *, exchange_name, exchange_type):
         raise NotImplementedError
@@ -118,3 +95,35 @@ class Channel(object):
 
     def publish(self,*,exchange_name, msg, routing_key=''):
         raise NotImplementedError
+
+class TimeoutRLock(object):
+    def __init__(self, timeout):
+        self.rlock_obj = threading.RLock()
+        self.timeout = timeout
+
+
+    def __enter__(self):
+        self.rlock_obj.acquire(timeout=self.timeout)
+
+    def __exit__(self,exc_type, exc_value, tb):
+        self.rlock_obj.release()
+
+def lock_channel(func):
+    @wraps(func)
+    def inner(self,*args,**kwargs):
+        with self.chan_lock:
+            out = func(self,*args,**kwargs)
+
+            return out
+
+    return inner
+
+def lock_connection(func):
+    @wraps(func)
+    def inner(self,*args,**kwargs):
+        with self.conn_lock:
+            out = func(self,*args,**kwargs)
+
+            return out
+
+    return inner
