@@ -12,3 +12,4 @@ API
 
 .. autoclass:: Resource
     :members:
+
