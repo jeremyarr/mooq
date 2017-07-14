@@ -29,7 +29,7 @@ Latest Version: v |version|
 AM-Rabbit What?
 -----------------
 
-AMQP is an international standard that specifies how a producer can send messages to one or more consumers in an asynchronous and robust way through a middleman called a broker.
+AMQP is an international communication standard that specifies how a producer can send messages to one or more consumers in an asynchronous and robust way through a middleman called a broker.
 
 RabbitMQ is a popular implementation of an AMQP (version 0-9-1) broker with client libraries written in a wide variety of programming languages.
 
