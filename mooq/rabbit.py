@@ -3,7 +3,8 @@ import subprocess
 import time
 import json
 import os
-from functools import wraps
+from functools import wraps, partial
+import asyncio
 
 from . import base
 
@@ -25,22 +26,31 @@ class RabbitMQConnection(base.Connection):
         super().__init__(**kwargs)
         self.channel_resource_constructor_func = RabbitMQChannel
 
-    def connect(self):
+    def _connect(self):
         cp = pika.ConnectionParameters(host=self.host, port=self.port)
         self._conn = pika.BlockingConnection(cp)
 
+    async def connect(self):
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None,self._connect)
+
+
     @base.lock_connection
-    def create_channel(self):
+    def _create_channel(self):
         internal_chan = self._conn.channel()
 
-        chan = RabbitMQChannel(internal_chan=internal_chan)
+        chan = RabbitMQChannel(internal_chan=internal_chan,loop=self.loop)
         self.channels.append(chan)
         return chan
+
+    async def create_channel(self):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None,self._create_channel)
 
     def close(self):
         raise NotImplementedError
 
-    def process_events(self,num_cycles=None):
+    def _process_events(self,num_cycles=None):
         while True:
             with self.conn_lock:
                 self._conn.process_data_events(time_limit=0.1)
@@ -50,16 +60,29 @@ class RabbitMQConnection(base.Connection):
                 if num_cycles == 0:
                     break
 
+    async def process_events(self,num_cycles=None):
+        loop = asyncio.get_event_loop()
+        func = partial(self._process_events, num_cycles=num_cycles)
+        await loop.run_in_executor(None,func)
+
 
 class RabbitMQChannel(base.Channel):
 
     @base.lock_channel
-    def register_producer(self, *, exchange_name, exchange_type):
+    def _register_producer(self, *, exchange_name, exchange_type):
         self._chan.exchange_declare(exchange=exchange_name,
                                     type=exchange_type)
 
+    async def register_producer(self, *, exchange_name, exchange_type):
+        loop = asyncio.get_event_loop()
+        func = partial(self._register_producer,exchange_name=exchange_name,
+                       exchange_type=exchange_type)
+        
+        await loop.run_in_executor(None,func)
+
+
     @base.lock_channel
-    def register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, routing_keys=[""]):
+    def _register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, routing_keys=[""]):
         self._chan.exchange_declare(exchange=exchange_name,
                                     type=exchange_type)
 
@@ -84,18 +107,30 @@ class RabbitMQChannel(base.Channel):
                                  consumer_tag = None,
                                  arguments = None)
 
-    def wrap_callback(self,func):
-        @wraps(func)
-        def inner(ch,meth,prop,body):
-            resp = {
-                     "msg": json.loads(body),
-                   }
-            return func(resp)
 
-        return inner
+    async def register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, routing_keys=[""]):
+        loop = asyncio.get_event_loop()
+        func = partial(self._register_consumer,exchange_name=exchange_name,
+                       exchange_type=exchange_type, queue_name=queue_name,
+                       callback=callback, routing_keys=routing_keys)
+        
+        await loop.run_in_executor(None,func)
+
+
+    def wrap_callback(self,async_callback):
+        def thread_callback(ch,meth,prop,body):
+            def main_loop_callback(ch,meth,prop,body):
+                resp = {
+                         "msg": json.loads(body),
+                       }
+                return base.create_task(async_callback(resp),self.loop)
+
+            return self.loop.call_soon_threadsafe(main_loop_callback,ch,meth,prop,body)
+
+        return thread_callback
 
     @base.lock_channel
-    def publish(self,*,exchange_name, msg, routing_key=''):
+    def _publish(self,*,exchange_name, msg, routing_key=''):
         to_send_json = json.dumps(msg)
         self._chan.basic_publish(exchange=exchange_name,
                                  routing_key=routing_key,
@@ -103,6 +138,12 @@ class RabbitMQChannel(base.Channel):
                                  body= to_send_json)
 
 
+    async def publish(self,*,exchange_name, msg, routing_key=''):
+        loop = asyncio.get_event_loop()
+        func = partial(self._publish,exchange_name=exchange_name,
+                       msg=msg, routing_key=routing_key)
+        
+        await loop.run_in_executor(None,func)
 
 
 

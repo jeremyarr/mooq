@@ -1,5 +1,7 @@
 import signal
 import unittest
+import asyncio
+from unittest.mock import MagicMock
 
 class TestHang(Exception):
     pass
@@ -55,3 +57,32 @@ class GWTTestCase(unittest.TestCase):
                           *self.func_to_check['args'],
                           *self.func_to_check['kwargs'])
 
+def asyncio_test(func):
+    def inner(self):
+        async def run(self,*args,**kwargs):
+            await self.async_setUp()
+
+            try:
+                return await func(self,*args,**kwargs)
+            finally:
+                await self.async_tearDown()
+
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.loop.set_debug(True)
+
+        try:
+            self.loop.run_until_complete(run(self))
+        finally:
+            self.loop.close()
+
+    return inner
+
+def AsyncMock(*args, **kwargs):
+    m = MagicMock(*args, **kwargs)
+
+    async def mock_coro(*args, **kwargs):
+        return m(*args, **kwargs)
+
+    mock_coro.mock = m
+    return mock_coro
