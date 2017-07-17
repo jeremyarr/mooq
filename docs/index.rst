@@ -24,52 +24,28 @@ Welcome to mooq
 
 Latest Version: v |version|
 
-`mooq <https://github.com/jeremyarr/jenkins_badges>`_ is a thread-safe library for interacting with an AMQP broker such as `RabbitMQ <https://www.rabbitmq.com/tutorials/tutorial-one-python.html>`_ in a simple, pythonic way.
+`mooq <https://github.com/jeremyarr/jenkins_badges>`_ is a asyncio compatible library for interacting with `RabbitMQ <https://www.rabbitmq.com/tutorials/tutorial-one-python.html>`_ AMQP broker.
+
+AM-Rabbit What?
+-----------------
+
+AMQP is an international communication standard that specifies how a producer can send messages to one or more consumers in an asynchronous and robust way through a middleman called a broker.
+
+RabbitMQ is a popular implementation of an AMQP (version 0-9-1) broker with client libraries written in a wide variety of programming languages.
+
+AMQP is very useful for communicating between microservices because messages can be passed around asynchronously and flexibly, ensuring microservices are more decoupled. Plus, all the low level communication is taken care of for you.
+
+But Why?
+---------
+
+`mooq`:
+
+- is designed for use in asyncio applications.
+- provides a simplified and pythonic API to RabbitMQ with sensible defaults
+- is built on top of the reliable and proven pika library
+- includes an in memory broker option for unit testing projects that depend on AMQP
 
 
-Features
-----------
-
-- Simplified, pythonic interface to RabbitMQ with sensible defaults
-- Interfaces with a `RabbitMQ 0-9-1` broker
-- Supports direct, topic and fanout exchange types
-- Contains an implementation of an "in memory" broker to assist in unit testing projects that depend on AMQP
-- Designed for thread safe use of AMQP connections and channels.
-
-<<<<<<< HEAD
-Pika's documentation states you cant rely on connection and channel objects being thread safe
-
-
-Just mooq it
---------------
-
-Consumer:
-
-.. code-block:: python
-
-#consumer.py
-
-    import mooq
-
-    #the callback to run
-    def yell_it(resp):
-        print(resp['msg'].upper())
-
-    conn = mooq.connect(host="localhost",
-                                  port=5672,
-                                  broker="rabbit")
-    chan = conn.create_channel()
-
-    chan.register_consumer( queue_name="my_queue",
-                            exchange_name="log",
-                            exchange_type="direct",
-                            routing_keys=["greetings","goodbyes"],
-                            callback = yell_it)
-
-    #blocking
-    print("waiting for first event...")
-    conn.process_events()
-=======
 Just mooq it
 --------------
 
@@ -80,74 +56,85 @@ Consumer:
     #consumer.py
 
     import mooq
-    import json
-    import signal
-    import sys
-
-    def gracefully_exit(signum, frame):
-        conn_resource.close()
-        chan_resource.close()
-        print("\n")
-        sys.exit(0)
-
-    #resources for accessing amqp connections and channels in a thread 
-    #safe manner
-    conn_resource = mooq.create_connection_resource(host="localhost",
-                                                    port=5672,
-                                                    broker="rabbit")
-
-    chan_resource = mooq.create_channel_resource(conn_resource)
-    signal.signal(signal.SIGINT, gracefully_exit)
-
+    import asyncio
 
     #the callback to run
-    def yell_it(ch, meth, prop, body):
-        msg = json.loads(body)
-        print(msg.upper())
+    async def yell_it(resp):
+        print(resp['msg'].upper())
 
-    with chan_resource.access() as chan:
-        chan.register_consumer( queue_name="my_queue",
+    async def main(loop):
+        conn = await mooq.connect(host="localhost",
+                            port=5672,
+                            broker="rabbit")
+        chan = await conn.create_channel()
+
+        await chan.register_consumer( queue_name="my_queue",
                                 exchange_name="log",
                                 exchange_type="direct",
                                 routing_keys=["greetings","goodbyes"],
                                 callback = yell_it)
 
-
-    #wait for events to be received and process them by running
-    #associated callbacks
-    with conn_resource.access() as conn:
-        print("waiting for first event:")
-        conn.process_events()
->>>>>>> 122c43b4d8ce688713b5ef78dbf24cd22dcc1405
+        loop.create_task(tick_every_second())
+        loop.create_task(conn.process_events())
 
 
+    async def tick_every_second():
+        cnt = 0
+        while True:
+            print("tick consumer app {}".format(cnt))
+            cnt = cnt + 1
+            await asyncio.sleep(1)
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(main(loop))
+    loop.run_forever()
 
 Producer:
 
 .. code-block:: python
 
-    # producer.py
-
     import mooq
+    import asyncio
+    import random
 
-    conn = mooq.connect(host="localhost",
+    #ideal API
+
+    async def main():
+        conn = await mooq.connect(host="localhost",
                                   port=5672,
                                   broker="rabbit")
-    chan = conn.create_channel()
+        chan = await conn.create_channel()
 
-    chan.register_producer(exchange_name="log",
-                           exchange_type="direct")
+        await chan.register_producer(exchange_name="log",
+                                     exchange_type="direct")
 
-    chan.publish(exchange_name="log",
-                 msg="Hello World!",
-                 routing_key="greetings")
+        loop.create_task(tick_every_second())
+        loop.create_task(publish_randomly(chan))
 
-    print("published!")
+    async def tick_every_second():
+        cnt = 0
+        while True:
+            print("tick producer app {}".format(cnt))
+            cnt = cnt + 1
+            await asyncio.sleep(1)
+
+    async def publish_randomly(chan):
+        while True:
+            await chan.publish(exchange_name="log",
+                               msg="Hello World!",
+                               routing_key="greetings")
+            print("published!")
+
+            await asyncio.sleep(random.randint(1,10))
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(main())
+    loop.run_forever()
 
 
 Terminal 1:
 
-<<<<<<< HEAD
+
 .. code-block:: bash
     
     $ python consumer.py
@@ -155,7 +142,14 @@ Terminal 1:
 .. code-block:: console
 
     waiting for first event...
+    tick producer app 1
     HELLO WORLD!
+    tick producer app 2
+    tick producer app 3
+    tick producer app 4
+    tick producer app 5
+    HELLO WORLD!
+    tick producer app 6
 
 
 Terminal 2:
@@ -166,32 +160,17 @@ Terminal 2:
 
 .. code-block:: console
 
+    tick producer app 1
     published!
-
-=======
-Terminal 1:
-
-.. code-block:: bash
-    
-    $ python consumer.py
-
-.. code-block:: console
-
-    waiting for first event:
-    HELLO WORLD!
-
-
-Terminal 2:
-
-.. code-block:: bash
-    
-    $ python producer.py
-
-.. code-block:: console
-
+    tick producer app 2
+    tick producer app 3
+    tick producer app 4
+    tick producer app 5
     published!
+    tick producer app 6
 
->>>>>>> 122c43b4d8ce688713b5ef78dbf24cd22dcc1405
+
+
 User Guide
 -----------
 
@@ -210,21 +189,7 @@ User Guide
    license
    authors
    kudos
-<<<<<<< HEAD
-=======
 
-
-
-Get it now
------------
-
-With pip:
-**********
-
-.. code-block:: bash
-
-    $ pip install mooq
->>>>>>> 122c43b4d8ce688713b5ef78dbf24cd22dcc1405
 
 
 

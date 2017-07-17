@@ -3,7 +3,7 @@ import queue
 import uuid
 import traceback
 import re
-
+import asyncio
 from . import base
 
 
@@ -19,25 +19,32 @@ class InMemoryBroker(base.Broker):
         self.exchanges = []
         self.consumer_queues = []
 
-    def close(self):
-        self.broker_ctl_q.put("close")
+    async def close(self):
+        self.broker_ctl_q.put("close",block=False)
+        await self.not_running
 
-    def run(self):
+    async def run(self,is_running_fut):
+        loop = asyncio.get_event_loop()
+        is_running_fut.set_result(None)
+        self.not_running = loop.create_future()
         while True:
             try:
-                broker_ctl_cmd = self.broker_ctl_q.get(timeout=0.001)
+                broker_ctl_cmd = self.broker_ctl_q.get(block=False)
             except queue.Empty:
                 pass
             else:
                 if broker_ctl_cmd == "close":
+                    self.not_running.set_result(None)
                     break
 
             try:
-                msg = self.msg_q.get(timeout=0.001)
+                msg = self.msg_q.get(block=False)
             except queue.Empty:
                 pass
             else:
                 self.handle_msg(msg)
+
+            await asyncio.sleep(0.001)
 
 
     def handle_msg(self, msg):
@@ -53,6 +60,7 @@ class InMemoryBroker(base.Broker):
                                 msg['exchange_name'],
                                 msg['msg'], 
                                 msg['routing_key'] )
+
         elif msg['command'] == "register_producer":
             self.add_exchange(msg['exchange_name'],msg['exchange_type'])
         elif msg['command'] == "register_consumer":
@@ -83,7 +91,7 @@ class InMemoryBroker(base.Broker):
         self.broker_q.put({ "response": "error",
                             "error": e,
                             "msg": msg
-                            })
+                            }, block=False)
 
     def get_exchange(self,name):
         for exch in self.exchanges:
@@ -181,37 +189,37 @@ class InMemoryConsumerQueue(base.ConsumerQueue):
 
     def get_next_message(self):
         try:
-            msg_dict = self._q.get(timeout=.05)
+            msg_dict = self._q.get(block=False)
             return msg_dict
         except queue.Empty:
             raise base.ConsumeTimeout
 
     def put(self,data):
-        self._q.put(data)
+        self._q.put(data, block=False)
 
 
 class InMemoryConnection(base.Connection):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
 
-    def connect(self):
+    async def connect(self):
         self.broker = self.get_broker(host=self.host, port=self.port)
         self.msg_q = self.broker.msg_q
         self.broker_q = self.broker.broker_q
     
-    @base.lock_connection
-    def create_channel(self):
+    # @base.lock_connection
+    async def create_channel(self):
         internal_chan = InMemoryChannelInternal(msg_q=self.msg_q,broker_q=self.broker_q)
 
-        chan = InMemoryChannel(internal_chan=internal_chan)
+        chan = InMemoryChannel(internal_chan=internal_chan,loop=self.loop)
         self.channels.append(chan)
         return chan
 
 
-    def close(self):
+    async def close(self):
         self.connected = False
 
-    def process_events(self,num_cycles=None):
+    async def process_events(self,num_cycles=None):
         while True:
             for chan in self.channels:
                 for queue_name,callback in chan.callbacks.items():
@@ -222,7 +230,8 @@ class InMemoryConnection(base.Connection):
                     except base.ConsumeTimeout:
                         pass
                     else:
-                        callback(msg_dict)
+                        _, launched = base.create_task(callback(msg_dict),self.loop)
+                        await launched
 
             if num_cycles is not None:
                 num_cycles = num_cycles - 1
@@ -235,33 +244,33 @@ class InMemoryChannel(base.Channel):
         super().__init__(**kwargs)
         self.callbacks = {}
 
-    @base.lock_channel
-    def publish(self,*,exchange_name,msg,routing_key=''):
+    # @base.lock_channel
+    async def publish(self,*,exchange_name,msg,routing_key=''):
         self._chan.msg_q.put(
                         {
                         "command":"publish",
                         "exchange_name":exchange_name,
                         "msg":msg,
                         "routing_key":routing_key,
-                        }
-                      )
+                        }, block=False
+                       )
+        await self._handle_broker_responses()
 
-        self._handle_broker_responses()
-
-    @base.lock_channel
-    def register_producer(self, *, exchange_name, exchange_type):
+    # @base.lock_channel
+    async def register_producer(self, *, exchange_name, exchange_type):
         self._chan.msg_q.put(
                         {
                         "command":"register_producer",
                         "exchange_name":exchange_name,
                         "exchange_type":exchange_type,
-                        }
+                        }, block=False
                        )
 
-        self._handle_broker_responses()
 
-    @base.lock_channel
-    def register_consumer(self, *, exchange_name, exchange_type, 
+        await self._handle_broker_responses()
+
+    # @base.lock_channel
+    async def register_consumer(self, *, exchange_name, exchange_type, 
                          queue_name, callback, routing_keys=[""]):
 
         if queue_name is None:
@@ -274,22 +283,25 @@ class InMemoryChannel(base.Channel):
                         "exchange_type":exchange_type,
                         "queue_name":queue_name,
                         "routing_keys":routing_keys
-                        }
+                        }, block=False
                        )
 
         self.callbacks[queue_name] = callback
 
-        self._handle_broker_responses()
+        await self._handle_broker_responses()
 
-    def _handle_broker_responses(self):
+    async def _handle_broker_responses(self):
+        await asyncio.sleep(0.01)
         while True:
             try:
-                resp = self._chan.broker_q.get(timeout=0.001)
+                resp = self._chan.broker_q.get(block=False)
             except queue.Empty:
                 break
             else:
                 if resp['response'] == "error":
                     raise resp['error'](resp['msg'])
+
+            await asyncio.sleep(0.001)
 
 
 

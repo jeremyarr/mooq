@@ -2,11 +2,13 @@ import unittest
 import os
 import json
 import sys
+import asyncio
 
 import xmlrunner
 
 import mooq
 from test import common
+from test.unittest_utils import asyncio_test
 
 # @unittest.skip("skipped")
 class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
@@ -14,92 +16,81 @@ class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):
     def setUpClass(cls):
         cls.GIVEN_RabbitMQBrokerStarted("localhost",5672)
 
-    def setUp(self):
-        super().setUp()
-        self.GIVEN_ConnectionResourceCreated("localhost",5672,"rabbit")
-        self.GIVEN_ChannelResourceCreated()
-        self.actual1 = None
-        self.actual2 = None
+    async def async_setUp(self):
+        await super().async_setUp()
+        await self.GIVEN_ConnectionResourceCreated("localhost",5672,"rabbit")
+        await self.GIVEN_ChannelResourceCreated()
 
-    def tearDown(self):
-        super().tearDown()
 
     # @unittest.skip("skipped")
-    def test_direct_runs_callback(self):
-        self.GIVEN_ProducerRegistered(exchange_name="fake_direct_exch",
+    @asyncio_test
+    async def test_direct_runs_callback(self):
+        await self.GIVEN_ProducerRegistered(exchange_name="fake_direct_exch",
                                       exchange_type="direct")
 
-        self.GIVEN_ConsumerRegistered(queue_name="fake_direct_consumer_queue",
+        await self.GIVEN_ConsumerRegistered(queue_name="fake_direct_consumer_queue",
                                       exchange_name="fake_direct_exch",
                                       exchange_type="direct",
                                       routing_keys=["fake_routing_key"],
-                                      callback = self.echo_callback1)
+                                      callback = self.fake_callback)
 
-        self.GIVEN_MessagePublished(exchange_name="fake_direct_exch",
+        await self.GIVEN_MessagePublished(exchange_name="fake_direct_exch",
                                     msg="fake_message",
                                     routing_key="fake_routing_key")
 
-        self.WHEN_ProcessEventsOnce()
+        await self.WHEN_ProcessEventsOnce()
 
-        self.THEN_EchoCallback1ReceivesMsg("fake_message")
+        self.THEN_CallbackReceivesMessage("fake_message")
 
     # @unittest.skip("skipped")
-    def test_topic_runs_callback(self):
-        self.GIVEN_ProducerRegistered(exchange_name="fake_topic_exch",
+    @asyncio_test
+    async def test_topic_runs_callback(self):
+        await self.GIVEN_ProducerRegistered(exchange_name="fake_topic_exch",
                                       exchange_type="topic")
 
-        self.GIVEN_ConsumerRegistered(queue_name="fake_topic_consumer_queue",
+        await self.GIVEN_ConsumerRegistered(queue_name="fake_topic_consumer_queue",
                                       exchange_name="fake_topic_exch",
                                       exchange_type="topic",
                                       routing_keys=["*.red","ball.*"],
-                                      callback = self.echo_callback1)
+                                      callback = self.fake_callback)
 
-        self.GIVEN_MessagePublished(exchange_name="fake_topic_exch",
+        await self.GIVEN_MessagePublished(exchange_name="fake_topic_exch",
                                     msg="fake_message",
                                     routing_key="apple.red")
 
-        self.WHEN_ProcessEventsOnce()
+        await self.WHEN_ProcessEventsOnce()
 
-        self.THEN_EchoCallback1ReceivesMsg("fake_message")
+        self.THEN_CallbackReceivesMessage("fake_message")
 
     # @unittest.skip("skipped")
-    def test_fanout_runs_callback(self):
-        self.GIVEN_ProducerRegistered(exchange_name="fake_fanout_exch",
+    @asyncio_test
+    async def test_fanout_runs_callback(self):
+        await self.GIVEN_ProducerRegistered(exchange_name="fake_fanout_exch",
                                       exchange_type="fanout")
 
-        self.GIVEN_ConsumerRegistered(queue_name="fake_fanout_consumer_queue1",
+        await self.GIVEN_ConsumerRegistered(queue_name="fake_fanout_consumer_queue1",
                                       exchange_name="fake_fanout_exch",
                                       exchange_type="fanout",
                                       routing_keys=[""],
-                                      callback = self.echo_callback1)
+                                      callback = self.fake_callback)
 
-        self.GIVEN_ConsumerRegistered(queue_name="fake_fanout_consumer_queue2",
+        await self.GIVEN_ConsumerRegistered(queue_name="fake_fanout_consumer_queue2",
                                       exchange_name="fake_fanout_exch",
                                       exchange_type="fanout",
                                       routing_keys=[""],
-                                      callback = self.echo_callback2)
+                                      callback = self.fake_callback2)
 
-        self.GIVEN_MessagePublished(exchange_name="fake_fanout_exch",
+        await self.GIVEN_MessagePublished(exchange_name="fake_fanout_exch",
                                     msg="fake_message",
                                     routing_key="")
 
-        self.WHEN_ProcessEventsOnce()
+        await self.WHEN_ProcessEventsOnce()
 
-        self.THEN_EchoCallback1ReceivesMsg("fake_message")
-        self.THEN_EchoCallback2ReceivesMsg("fake_message")
+        self.THEN_CallbackReceivesMessage("fake_message")
+        self.THEN_Callback2ReceivesMessage("fake_message")
 
 
-    def THEN_EchoCallback1ReceivesMsg(self,expected):
-        self.assertEqual(expected,self.actual1)
 
-    def THEN_EchoCallback2ReceivesMsg(self,expected):
-        self.assertEqual(expected,self.actual2)
-
-    def echo_callback1(self,resp):
-        self.actual1 = resp['msg']
-
-    def echo_callback2(self,resp):
-        self.actual2 = resp['msg']
 
 if __name__ == '__main__':
     unittest.main(

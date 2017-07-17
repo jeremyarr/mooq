@@ -2,6 +2,8 @@
 This is a mooq
 '''
 
+import asyncio
+
 from .__version__ import __version__
 
 from . import base
@@ -26,14 +28,17 @@ from .rabbit import RabbitMQBroker, \
                     RabbitMQChannel
 
 
-def connect(host="localhost",port=5672,broker="rabbit"):
+async def connect(host="localhost",port=5672,broker="rabbit"):
     '''
     create a connection resource
     '''
 
     if broker == "in_memory":
-        return InMemoryConnection(host=host,port=port)
+        conn = InMemoryConnection(host=host,port=port)
     elif broker == "rabbit":
-        return RabbitMQConnection(host=host,port=port)
+        conn = RabbitMQConnection(host=host,port=port)
     else:
         raise NotImplementedError
+
+    await conn.connect()
+    return conn

@@ -8,8 +8,7 @@ API
 .. automodule:: mooq
     :members:
 
-.. autofunction:: create_connection_resource
+.. autofunction:: connect
 
-.. autoclass:: Resource
-    :members:
+
 

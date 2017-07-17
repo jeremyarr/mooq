@@ -1,4 +1,5 @@
 import threading
+import asyncio
 from functools import wraps
 
 class ExchangeNotFound(Exception):
@@ -19,9 +20,19 @@ class BadExchange(Exception):
 class BrokerInternalError(Exception):
     pass
 
-
-
 broker_registry = {}
+
+
+def create_task(coro_obj,loop):
+    launched = loop.create_future()
+    return loop.create_task(task_wrapper(coro_obj,launched)), launched
+
+async def task_wrapper(coro_obj,launched):
+        launched.set_result(True)
+        await coro_obj
+
+
+
 
 class Broker(object):
     def __init__(self,*,host,port):
@@ -33,7 +44,7 @@ class Broker(object):
     def close(self):
         raise NotImplementedError
 
-    def run(self):
+    async def run(self):
         raise NotImplementedError
 
 
@@ -51,20 +62,20 @@ class Connection(object):
         self.host = host
         self.port = port
         self.conn_lock = TimeoutRLock(1)
-        self.connect()
-        self.connected = True
+        self.connected = False
         self.channels = []
+        self.loop = asyncio.get_event_loop()
 
-    def create_channel(self):
+    async def create_channel(self):
         raise NotImplementedError
 
-    def connect(self):
+    async def connect(self):
         raise NotImplementedError
 
-    def close(self):
+    async def close(self):
         raise NotImplementedError
 
-    def process_events(self,num_cycles=None):
+    async def process_events(self,num_cycles=None):
         raise NotImplementedError
 
     def get_broker(self,*,host,port):
@@ -83,17 +94,18 @@ class ConsumerQueue(object):
         raise NotImplementedError
 
 class Channel(object):
-    def __init__(self,*,internal_chan):
+    def __init__(self,*,internal_chan,loop):
         self._chan = internal_chan
         self.chan_lock = TimeoutRLock(1)
+        self.loop = loop
 
-    def register_producer(self, *, exchange_name, exchange_type):
+    async def register_producer(self, *, exchange_name, exchange_type):
         raise NotImplementedError
 
-    def register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, routing_keys):
+    async def register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, routing_keys):
         raise NotImplementedError
 
-    def publish(self,*,exchange_name, msg, routing_key=''):
+    async def publish(self,*,exchange_name, msg, routing_key=''):
         raise NotImplementedError
 
 class TimeoutRLock(object):
@@ -127,3 +139,4 @@ def lock_connection(func):
             return out
 
     return inner
+
