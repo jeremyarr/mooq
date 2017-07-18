@@ -11,8 +11,8 @@ setup(
     name='mooq',
     version=about['__version__'],
     packages=['mooq'],
-    description="amqp made simple, over python ",
-    long_description='amqp made simple, over python ',
+    description="An asyncio compatible library for interacting with a RabbitMQ AMQP broker",
+    long_description="An asyncio compatible library for interacting with a RabbitMQ AMQP broker",
     include_package_data=True,
     install_requires=[
         'pika',

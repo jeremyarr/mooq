@@ -23,7 +23,7 @@ Welcome to mooq
 
 Latest Version: v |version|
 
-`mooq <https://github.com/jeremyarr/mooq>`_ is a asyncio compatible library for interacting with `RabbitMQ <https://www.rabbitmq.com>`_ AMQP broker.
+`mooq <https://github.com/jeremyarr/mooq>`_ is an asyncio compatible library for interacting with a `RabbitMQ <https://www.rabbitmq.com>`_ AMQP broker.
 
 Features
 ---------
