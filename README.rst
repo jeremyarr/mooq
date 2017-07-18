@@ -1,18 +1,112 @@
 .. image:: docs/_static/logo_full2.png
 
+.. highlight:: python
+
+Welcome to mooq
+=================
+
 .. image:: http://tactile.com.au/jenkins/buildStatus/icon?job=mooq1
     :target: https://github.com/jeremyarr/mooq
 
-.. image:: https://img.shields.io/badge/license-MIT-blue.svg
-    :target: https://github.com/jeremyarr/mooq
+.. image:: https://img.shields.io/pypi/l/mooq.svg
+    :target: https://pypi.python.org/pypi/mooq
 
 .. image:: https://tactile.com.au/badge-server/coverage/mooq1
     :target: https://github.com/jeremyarr/mooq
 
+.. image:: https://img.shields.io/pypi/pyversions/mooq.svg
+    :target: https://pypi.python.org/pypi/mooq
 
-mooq (in development)
-========================
+.. image::  https://img.shields.io/pypi/status/mooq.svg
+    :target: https://pypi.python.org/pypi/mooq
 
-amqp made simple, over python 
+.. image:: https://img.shields.io/pypi/implementation/mooq.svg
+    :target: https://pypi.python.org/pypi/mooq
 
-Hold tight, no releases yet.
+
+
+Latest Version: v |version|
+
+`mooq <https://github.com/jeremyarr/mooq>`_ is a asyncio compatible library for interacting with `RabbitMQ <https://www.rabbitmq.com>`_ AMQP broker.
+
+Features
+---------
+
+- Uses asyncio. No more callback hell.
+- Simplified and pythonic API to RabbitMQ
+- Built on top of the proven `pika <https://github.com/pika/pika>`_ library
+- Comes with an in memory broker for unit testing projects that depend on RabbitMQ
+
+Get It Now
+-----------
+
+.. code-block:: bash
+
+    $ pip install mooq
+
+Just mooq it
+--------------
+
+Just some of the ways to use `mooq`:
+
+
+Creating a connection::
+
+    conn = await mooq.connect(
+                host="localhost",
+                port=5672, 
+                broker="rabbit"
+                )
+
+Creating a channel of the connection::
+
+    chan = await conn.create_channel()
+
+Registering a producer::
+
+    await chan.register_producer(
+            exchange_name="log",
+            exchange_type="direct"
+            )
+
+Registering a consumer and associated callback::
+
+    async def yell_it(resp):
+        print(resp['msg'].upper())
+
+    await chan.register_consumer( 
+            queue_name="my_queue",
+            exchange_name="log", 
+            exchange_type="direct",
+            routing_keys=["greetings","goodbyes"],
+            callback = yell_it
+            )
+
+Publishing a message::
+
+    await chan.publish(exchange_name="log",
+                       msg="Hello World!",
+                       routing_key="greetings")
+
+
+Process messages asynchronously, running associated callbacks::
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(conn.process_events())
+
+
+More at https://mooq.readthedocs.io
+----------------------------------------------
+
+Project Links
+-------------
+
+- Docs: https://jenkins-badges.readthedocs.io/
+- Changelog: https://mooq.readthedocs.io/en/latest/changelog.html
+- PyPI: https://pypi.python.org/pypi/mooq
+- Issues: https://github.com/jeremyarr/mooq/issues
+
+License
+-------
+
+MIT licensed. See the bundled `LICENSE <https://github.com/jeremyarr/mooq/blob/master/LICENSE>`_ file for more details.

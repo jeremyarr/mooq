@@ -1,12 +1,8 @@
-#example consumer in "Just mooq it" section of docs
-
-# producer.py
+# direct_producer.py
 
 import mooq
 import asyncio
 import random
-
-#ideal API
 
 async def main():
     conn = await mooq.connect(host="localhost",

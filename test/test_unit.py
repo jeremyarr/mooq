@@ -43,7 +43,6 @@ class InMemoryDirectProduceConsumeTest(common.TransportTestCase):
                                     msg="fake_message",
                                     routing_key="fake_routing_key")
         await self.WHEN_ProcessEventsNTimes(2)
-        await asyncio.sleep(0.1)
 
         self.THEN_CallbackReceivesMessage("fake_message")
 
