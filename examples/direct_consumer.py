@@ -1,6 +1,4 @@
-#example consumer in "Just mooq it" section of docs
-
-#consumer.py
+#direct_consumer.py
 
 import mooq
 import asyncio

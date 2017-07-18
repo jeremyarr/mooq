@@ -29,8 +29,17 @@ class TransportTestCase(unittest.TestCase):
 
     @classmethod
     def GIVEN_RabbitMQBrokerStarted(cls,host,port):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.set_debug(True)
+
         cls.broker = mooq.RabbitMQBroker(host=host,port=port)
-        cls.broker.run()
+
+        try:
+            loop.run_until_complete(cls.broker.run())
+        finally:
+            loop.close()
+        
 
     async def GIVEN_ConnectionResourceCreated(self,host,port,broker_type):
         self.conn = await mooq.connect(broker=broker_type,

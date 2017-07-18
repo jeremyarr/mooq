@@ -37,7 +37,8 @@ with open(os.path.join(here,"..",'mooq', '__version__.py'), 'r') as f:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
-    'sphinx.ext.todo']
+    'sphinx.ext.todo',
+    'sphinxcontrib.asyncio']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -167,3 +168,13 @@ texinfo_documents = [
 
 
 
+# This value selects what content will be inserted into
+# the main body of an autoclass directive. The possible values are:
+
+# “class”: Only the class’ docstring is inserted. This is the default. 
+#You “can still document init as a separate method using automethod or “the members option to autoclass.
+# “both”: Both the class’ and the init method’s docstring are concatenated and inserted.
+# “init”: Only the init method’s docstring is inserted.
+
+
+autoclass_content = 'both'
