@@ -1,10 +1,5 @@
 .. image:: docs/_static/logo_full2.png
 
-.. highlight:: python
-
-Welcome to mooq
-=================
-
 .. image:: http://tactile.com.au/jenkins/buildStatus/icon?job=mooq1
     :target: https://github.com/jeremyarr/mooq
 
@@ -23,9 +18,6 @@ Welcome to mooq
 .. image:: https://img.shields.io/pypi/implementation/mooq.svg
     :target: https://pypi.python.org/pypi/mooq
 
-
-
-Latest Version: v |version|
 
 `mooq <https://github.com/jeremyarr/mooq>`_ is a asyncio compatible library for interacting with `RabbitMQ <https://www.rabbitmq.com>`_ AMQP broker.
 
@@ -50,7 +42,9 @@ Just mooq it
 Just some of the ways to use `mooq`:
 
 
-Creating a connection::
+Creating a connection:
+
+.. code-block:: python
 
     conn = await mooq.connect(
                 host="localhost",
@@ -58,18 +52,24 @@ Creating a connection::
                 broker="rabbit"
                 )
 
-Creating a channel of the connection::
+Creating a channel of the connection:
+
+.. code-block:: python
 
     chan = await conn.create_channel()
 
-Registering a producer::
+Registering a producer:
+
+.. code-block:: python
 
     await chan.register_producer(
             exchange_name="log",
             exchange_type="direct"
             )
 
-Registering a consumer and associated callback::
+Registering a consumer and associated callback:
+
+.. code-block:: python
 
     async def yell_it(resp):
         print(resp['msg'].upper())
@@ -82,14 +82,18 @@ Registering a consumer and associated callback::
             callback = yell_it
             )
 
-Publishing a message::
+Publishing a message:
+
+.. code-block:: python
 
     await chan.publish(exchange_name="log",
                        msg="Hello World!",
                        routing_key="greetings")
 
 
-Process messages asynchronously, running associated callbacks::
+Process messages asynchronously, running associated callbacks:
+
+.. code-block:: python
 
     loop = asyncio.get_event_loop()
     loop.create_task(conn.process_events())
