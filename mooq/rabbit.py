@@ -12,24 +12,23 @@ from . import base
 
 class RabbitMQBroker(base.Broker):
     '''
-    Control an existing RabbitMQBroker on your machine. 
+    Control an existing RabbitMQBroker on your machine.
 
-    Useful when performing integration testing of projects that depend on RabbitMQ. 
+    Useful when performing integration testing of projects that depend on RabbitMQ.
     '''
 
     def _run(self):
         if os.environ["TEST_DISTRIBUTION"] == "arch":
-            subprocess.run("sudo systemctl restart rabbitmq.service",shell=True, check=True,timeout=5)
+            subprocess.run("sudo systemctl restart rabbitmq.service", shell=True, check=True, timeout=5)
         elif os.environ["TEST_DISTRIBUTION"] == "ubuntu":
-            subprocess.run("sudo service rabbitmq-server restart",shell=True, check=True,timeout=5)
+            subprocess.run("sudo service rabbitmq-server restart", shell=True, check=True, timeout=5)
         else:
             raise ValueError("TEST_DISTRIBUTION environmental variable not set to either arch or ubuntu")
 
-
-    async def run(self,is_running=None):
+    async def run(self, is_running=None):
         '''
         Restarts the RabbitMQ broker using a method derived from the TEST_DISTRIBUTION
-        environmental variable. 
+        environmental variable.
 
         :param is_running: A future set to done once the broker is confirmed
             as being running
@@ -49,7 +48,7 @@ class RabbitMQBroker(base.Broker):
             This can be provided by editing the sudoers file.
         '''
 
-        await self.loop.run_in_executor(None,self._run)
+        await self.loop.run_in_executor(None, self._run)
         await asyncio.sleep(20)
         if is_running:
             is_running.set_result(None)
@@ -59,7 +58,7 @@ class RabbitMQConnection(base.Connection):
     '''
     Implementation of a connection to a RabbitMQ broker.
     '''
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         '''
         :param host: the hostname of the broker you wish to connect to
         :type host: str
@@ -80,14 +79,13 @@ class RabbitMQConnection(base.Connection):
         '''
         Connect to the RabbitMQ broker
         '''
-        await self.loop.run_in_executor(None,self._connect)
-
+        await self.loop.run_in_executor(None, self._connect)
 
     @base.lock_connection
     def _create_channel(self):
         internal_chan = self._conn.channel()
 
-        chan = RabbitMQChannel(internal_chan=internal_chan,loop=self.loop)
+        chan = RabbitMQChannel(internal_chan=internal_chan, loop=self.loop)
         self.channels.append(chan)
         return chan
 
@@ -95,20 +93,20 @@ class RabbitMQConnection(base.Connection):
         '''
         create a channel for multiplexing the connection
 
-        :returns: a :class:`RabbitMQChannel` object 
+        :returns: a :class:`RabbitMQChannel` object
         '''
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None,self._create_channel)
+        return await loop.run_in_executor(None, self._create_channel)
 
     def close(self):
         '''
         Stop processing events and close the connection to the broker
 
-        :raises NotImplementedError: 
+        :raises NotImplementedError:
         '''
         raise NotImplementedError
 
-    def _process_events(self,num_cycles=None):
+    def _process_events(self, num_cycles=None):
         while True:
             with self.conn_lock:
                 self._conn.process_data_events(time_limit=0.1)
@@ -118,21 +116,21 @@ class RabbitMQConnection(base.Connection):
                 if num_cycles == 0:
                     break
 
-    async def process_events(self,num_cycles=None):
+    async def process_events(self, num_cycles=None):
         '''
-        Receive messages from the RabbitMQ broker and schedule 
+        Receive messages from the RabbitMQ broker and schedule
         associated callback couroutines.
 
         Should be run as a task in your app and not awaited for.
 
-        :param num_cycles: the number of times to run the 
+        :param num_cycles: the number of times to run the
             event processing loop. A value of None
             will cause events to be processed without a cycle limit.
         :type num_cycles: int|None
         '''
         loop = asyncio.get_event_loop()
         func = partial(self._process_events, num_cycles=num_cycles)
-        await loop.run_in_executor(None,func)
+        await loop.run_in_executor(None, func)
 
 
 class RabbitMQChannel(base.Channel):
@@ -159,11 +157,10 @@ class RabbitMQChannel(base.Channel):
         '''
 
         loop = asyncio.get_event_loop()
-        func = partial(self._register_producer,exchange_name=exchange_name,
+        func = partial(self._register_producer, exchange_name=exchange_name,
                        exchange_type=exchange_type)
-        
-        await loop.run_in_executor(None,func)
 
+        await loop.run_in_executor(None, func)
 
     @base.lock_channel
     def _register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, routing_keys=[""]):
@@ -180,17 +177,16 @@ class RabbitMQChannel(base.Channel):
 
         for r in routing_keys:
             self._chan.queue_bind(exchange=exchange_name,
-                                  queue = queue_name,
-                                  routing_key = r)
+                                  queue=queue_name,
+                                  routing_key=r)
 
         pika_callback = self._wrap_callback(callback)
         self._chan.basic_consume(pika_callback,
-                                 queue = queue_name,
-                                 no_ack = True,
-                                 exclusive = exclusive,
-                                 consumer_tag = None,
-                                 arguments = None)
-
+                                 queue=queue_name,
+                                 no_ack=True,
+                                 exclusive=exclusive,
+                                 consumer_tag=None,
+                                 arguments=None)
 
     async def register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, routing_keys=[""]):
         '''
@@ -199,12 +195,12 @@ class RabbitMQChannel(base.Channel):
         :param exchange_name: name of the exchange
         :param exchange_type: Type of the exchange. Accepted values are "direct",
             "topic" or "fanout"
-        :param queue_name: name of the queue. If None, a name will be given 
-            automatically and the queue will be declared exclusive to the channel, 
+        :param queue_name: name of the queue. If None, a name will be given
+            automatically and the queue will be declared exclusive to the channel,
             meaning it will be deleted once the channel is closed.
         :param callback: The callback to run when a message is placed on the queue that
             matches one of the routing keys
-        :param routing_keys: A list of keys to match against. A message will only be sent 
+        :param routing_keys: A list of keys to match against. A message will only be sent
             to a consumer if its routing key matches one or more of the routing keys listed
 
         :type exchange_name: str
@@ -215,41 +211,40 @@ class RabbitMQChannel(base.Channel):
         '''
 
         loop = asyncio.get_event_loop()
-        func = partial(self._register_consumer,exchange_name=exchange_name,
+        func = partial(self._register_consumer, exchange_name=exchange_name,
                        exchange_type=exchange_type, queue_name=queue_name,
                        callback=callback, routing_keys=routing_keys)
-        
-        await loop.run_in_executor(None,func)
 
+        await loop.run_in_executor(None, func)
 
-    def _wrap_callback(self,async_callback):
+    def _wrap_callback(self, async_callback):
         '''
-        Decorator to turn a pika callback running outside the 
+        Decorator to turn a pika callback running outside the
         main thread into a coroutine running in the main thread
         with simplified arguments.
         '''
 
-        def thread_callback(ch,meth,prop,body):
-            def main_loop_callback(ch,meth,prop,body):
+        def thread_callback(ch, meth, prop, body):
+            def main_loop_callback(ch, meth, prop, body):
                 resp = {
-                         "msg": json.loads(body),
-                       }
-                return base.create_task(async_callback(resp),self.loop)
+                    "msg": json.loads(body),
+                }
 
-            return self.loop.call_soon_threadsafe(main_loop_callback,ch,meth,prop,body)
+                return base.create_task(async_callback(resp), self.loop)
+
+            return self.loop.call_soon_threadsafe(main_loop_callback, ch, meth, prop, body)
 
         return thread_callback
 
     @base.lock_channel
-    def _publish(self,*,exchange_name, msg, routing_key=''):
+    def _publish(self, *, exchange_name, msg, routing_key=''):
         to_send_json = json.dumps(msg)
         self._chan.basic_publish(exchange=exchange_name,
                                  routing_key=routing_key,
-                                 properties = None,
-                                 body= to_send_json)
+                                 properties=None,
+                                 body=to_send_json)
 
-
-    async def publish(self,*,exchange_name, msg, routing_key=''):
+    async def publish(self, *, exchange_name, msg, routing_key=''):
         '''
         Publish a message on the channel.
 
@@ -261,14 +256,7 @@ class RabbitMQChannel(base.Channel):
         :type routing_key: str
         '''
         loop = asyncio.get_event_loop()
-        func = partial(self._publish,exchange_name=exchange_name,
+        func = partial(self._publish, exchange_name=exchange_name,
                        msg=msg, routing_key=routing_key)
-        
-        await loop.run_in_executor(None,func)
 
-
-
-
-
-
-
+        await loop.run_in_executor(None, func)

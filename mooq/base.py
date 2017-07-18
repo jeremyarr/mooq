@@ -7,28 +7,35 @@ import threading
 import asyncio
 from functools import wraps
 
+
 class ExchangeNotFound(Exception):
     pass
+
 
 class ConsumerQueueNotFound(Exception):
     pass
 
+
 class ConsumeTimeout(Exception):
     pass
+
 
 class NothingToConsume(Exception):
     pass
 
+
 class BadExchange(Exception):
     pass
+
 
 class BrokerInternalError(Exception):
     pass
 
+
 broker_registry = {}
 
 
-def create_task(coro_obj,loop):
+def create_task(coro_obj, loop):
     '''
     wrapper for creating a task that can be used for waiting
     until a task has started.
@@ -37,21 +44,18 @@ def create_task(coro_obj,loop):
     :param loop: event loop
     :returns: a two element tuple where the first element
         is the task object. Awaiting on this will return when
-        the coroutine object is done executing. The second element 
+        the coroutine object is done executing. The second element
         is a future that becomes done when the coroutine object is started.
 
-    .. note:: must only be called from within the thread 
+    .. note:: must only be called from within the thread
         where the event loop resides
     '''
-    async def task_wrapper(coro_obj,launched):
+    async def task_wrapper(coro_obj, launched):
         launched.set_result(True)
         await coro_obj
 
     launched = loop.create_future()
-    return loop.create_task(task_wrapper(coro_obj,launched)), launched
-
-
-
+    return loop.create_task(task_wrapper(coro_obj, launched)), launched
 
 
 class Broker(object):
@@ -59,7 +63,7 @@ class Broker(object):
     Base class for a broker. Not to be used directly.
     '''
 
-    def __init__(self,*,host,port):
+    def __init__(self, *, host, port):
         '''
         Add the broker to the registry. Each broker is given
         a unique name of "host_port" in the registry.
@@ -72,7 +76,7 @@ class Broker(object):
 
         self.host = host
         self.port = port
-        self.name = "{}_{}".format(self.host,self.port)
+        self.name = "{}_{}".format(self.host, self.port)
         broker_registry[self.name] = self
         self.loop = asyncio.get_event_loop()
 
@@ -84,7 +88,7 @@ class Broker(object):
         '''
         raise NotImplementedError
 
-    async def run(self,is_running=None):
+    async def run(self, is_running=None):
         '''
         restarts the broker
 
@@ -102,19 +106,19 @@ class Exchange(object):
     Base class for an exchange. Not to be used directly.
     '''
 
-    def __init__(self,*,name,type_):
+    def __init__(self, *, name, type_):
         '''
         :param name: name of exchange
-        :param type\_: type of exchange. Accepted values are 
+        :param type\_: type of exchange. Accepted values are
             "direct", "fanout" or "topic"
         :type name: str
         :type type\_: str
         '''
         self.name = name
-        assert type_ in ["direct","fanout","topic"]
+        assert type_ in ["direct", "fanout", "topic"]
         self.type_ = type_
 
-    def bind(self,queue_name,routing_keys):
+    def bind(self, queue_name, routing_keys):
         '''
         Bind routing keys to a queue
 
@@ -126,11 +130,12 @@ class Exchange(object):
         '''
         raise NotImplementedError
 
+
 class ConsumerQueue(object):
     '''
     Base class for a consumer queue. Not to be used directly.
     '''
-    def __init__(self,*,name):
+    def __init__(self, *, name):
         '''
         :param name: the name of the queue
         :type name: str
@@ -148,7 +153,7 @@ class ConsumerQueue(object):
         '''
         raise NotImplementedError
 
-    def put(self,data):
+    def put(self, data):
         '''
         Put data directly into the consumer queue
 
@@ -158,21 +163,11 @@ class ConsumerQueue(object):
         raise NotImplementedError
 
 
-
-
-
-
-
-
-
-
-
-
 class Connection(object):
     '''
     Base class for a connection to a broker. Not to be used directly.
     '''
-    def __init__(self,*,host,port):
+    def __init__(self, *, host, port):
         '''
         :param host: the hostname of the broker you wish to connect to
         :type host: str
@@ -192,7 +187,7 @@ class Connection(object):
         '''
         create a channel for multiplexing the connection
 
-        :raises NotImplementedError: 
+        :raises NotImplementedError:
         '''
         raise NotImplementedError
 
@@ -200,7 +195,7 @@ class Connection(object):
         '''
         Connect to the broker
 
-        :raises NotImplementedError: 
+        :raises NotImplementedError:
         '''
         raise NotImplementedError
 
@@ -208,25 +203,25 @@ class Connection(object):
         '''
         Stop processing events and close the connection to the broker
 
-        :raises NotImplementedError: 
+        :raises NotImplementedError:
         '''
 
         raise NotImplementedError
 
-    async def process_events(self,num_cycles=None):
+    async def process_events(self, num_cycles=None):
         '''
-        Receive messages from the broker and schedule 
+        Receive messages from the broker and schedule
         associated callback couroutines.
 
-        :param num_cycles: the number of times to run the 
+        :param num_cycles: the number of times to run the
             event processing loop. A value of None or "inf"
             will cause events to be processed without a cycle limit.
         :type num_cycles: int|None|"inf"
-        :raises NotImplementedError: 
+        :raises NotImplementedError:
         '''
         raise NotImplementedError
 
-    def get_broker(self,*,host,port):
+    def get_broker(self, *, host, port):
         '''
         Get the :class:`Broker` object associated with the connection.
 
@@ -238,17 +233,15 @@ class Connection(object):
         :return: A :class:`Broker` object
         '''
 
-        broker_name = "{}_{}".format(host,port)
+        broker_name = "{}_{}".format(host, port)
         return broker_registry[broker_name]
-
-
 
 
 class Channel(object):
     '''
     Base class for a channel of a connection. Not to be used directly.
     '''
-    def __init__(self,*,internal_chan,loop):
+    def __init__(self, *, internal_chan, loop):
         '''
         :param internal_chan: the transport specific channel object to use
         :param loop: the event loop
@@ -272,7 +265,7 @@ class Channel(object):
         '''
         raise NotImplementedError
 
-    async def register_consumer(self, *, exchange_name, exchange_type, 
+    async def register_consumer(self, *, exchange_name, exchange_type,
                                 queue_name, callback, routing_keys):
 
         '''
@@ -281,12 +274,12 @@ class Channel(object):
         :param exchange_name: name of the exchange
         :param exchange_type: Type of the exchange. Accepted values are "direct",
             "topic" or "fanout"
-        :param queue_name: name of the queue. If None, a name will be given 
-            automatically and the queue will be declared exclusive to the channel, 
+        :param queue_name: name of the queue. If None, a name will be given
+            automatically and the queue will be declared exclusive to the channel,
             meaning it will be deleted once the channel is closed.
         :param callback: The callback to run when a message is placed on the queue that
             matches one of the routing keys
-        :param routing_keys: A list of keys to match against. A message will only be sent 
+        :param routing_keys: A list of keys to match against. A message will only be sent
             to a consumer if its routing key matches one or more of the routing keys listed
 
         :type exchange_name: str
@@ -298,7 +291,7 @@ class Channel(object):
         '''
         raise NotImplementedError
 
-    async def publish(self,*,exchange_name, msg, routing_key=''):
+    async def publish(self, *, exchange_name, msg, routing_key=''):
         '''
         Publish a message on the channel.
 
@@ -311,6 +304,7 @@ class Channel(object):
         '''
         raise NotImplementedError
 
+
 class _TimeoutRLock(object):
     '''
     Context manager for a reentrant Lock with timeout
@@ -322,34 +316,35 @@ class _TimeoutRLock(object):
     def __enter__(self):
         self.rlock_obj.acquire(timeout=self.timeout)
 
-    def __exit__(self,exc_type, exc_value, tb):
+    def __exit__(self, exc_type, exc_value, tb):
         self.rlock_obj.release()
+
 
 def lock_channel(func):
     '''
-    Deocorator to acquire the channel lock and 
+    Deocorator to acquire the channel lock and
     release it after use.
     '''
     @wraps(func)
-    def inner(self,*args,**kwargs):
+    def inner(self, *args, **kwargs):
         with self.chan_lock:
-            out = func(self,*args,**kwargs)
+            out = func(self, *args, **kwargs)
 
             return out
 
     return inner
+
 
 def lock_connection(func):
     '''
-    Deocorator to acquire the connection lock and 
+    Deocorator to acquire the connection lock and
     release it after use.
     '''
     @wraps(func)
-    def inner(self,*args,**kwargs):
+    def inner(self, *args, **kwargs):
         with self.conn_lock:
-            out = func(self,*args,**kwargs)
+            out = func(self, *args, **kwargs)
 
             return out
 
     return inner
-

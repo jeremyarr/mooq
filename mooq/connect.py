@@ -1,7 +1,8 @@
 from .in_memory import InMemoryConnection
 from .rabbit import RabbitMQConnection
 
-async def connect(host="localhost",port=5672,broker="rabbit"):
+
+async def connect(host="localhost", port=5672, broker="rabbit"):
     '''
     Create a connection object and then connect to a broker
 
@@ -20,9 +21,9 @@ async def connect(host="localhost",port=5672,broker="rabbit"):
     '''
 
     if broker == "in_memory":
-        conn = InMemoryConnection(host=host,port=port)
+        conn = InMemoryConnection(host=host, port=port)
     elif broker == "rabbit":
-        conn = RabbitMQConnection(host=host,port=port)
+        conn = RabbitMQConnection(host=host, port=port)
     else:
         raise NotImplementedError
 
