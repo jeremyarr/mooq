@@ -105,7 +105,7 @@ More at https://mooq.readthedocs.io
 Project Links
 -------------
 
-- Docs: https://jenkins-badges.readthedocs.io/
+- Docs: https://mooq.readthedocs.io/
 - Changelog: https://mooq.readthedocs.io/en/latest/changelog.html
 - PyPI: https://pypi.python.org/pypi/mooq
 - Issues: https://github.com/jeremyarr/mooq/issues
