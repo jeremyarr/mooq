@@ -1,10 +1,11 @@
-import pika
 import subprocess
 import time
 import json
 import os
 from functools import wraps, partial
 import asyncio
+
+import pika
 
 from . import base
 
