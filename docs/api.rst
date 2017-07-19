@@ -1,5 +1,7 @@
 .. module:: mooq
 
+.. _api:
+
 API
 =====
 

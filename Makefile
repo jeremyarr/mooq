@@ -14,3 +14,5 @@ docs:
 	cd docs && make html
 	@echo -e "\033[95m\n\nBuild successful! View the docs homepage at docs/_build/html/index.html.\n\033[0m"
 
+tests:
+	python run_tests.py --unit --output text --dist arch

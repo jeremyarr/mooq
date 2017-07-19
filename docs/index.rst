@@ -43,9 +43,6 @@ Get It Now
 Just mooq it
 --------------
 
-Just some of the ways to use `mooq`:
-
-
 Creating a connection::
 
     conn = await mooq.connect(
@@ -101,40 +98,14 @@ User Guide
    :maxdepth: 2
    :caption: Contents:
 
-   introduction
    installation
-   quickstart
-   advanced_usage
-   unit_testing
+   tutorial
    examples
    api
    changelog
    license
    authors
    kudos
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 Indices and tables
 ==================
