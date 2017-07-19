@@ -7,6 +7,10 @@ Tutorial
 
 `mooq` is really useful for creating asyncio based microservices that talk to eachother. So let's create an app that does just that.
 
+.. contents::
+   :local:
+   :depth: 1
+
 
 Introducing "in2com"
 -------------------------
@@ -39,18 +43,20 @@ The `main()` coroutine looks like this::
     import asyncio
     import random
 
-    async def main(loop):
-        conn = await mooq.connect(host="localhost",
-                                  port=5672,
-                                  broker="rabbit")
+    async def main():
+        conn = await mooq.connect(
+                host="localhost",
+                port=5672,
+                broker="rabbit")
 
         chan = await conn.create_channel()
 
-        await chan.register_producer(exchange_name="in2com_log",
-                                     exchange_type="direct")
+        await chan.register_producer(
+                exchange_name="in2com_log",
+                exchange_type="direct")
 
-        loop.create_task(publish_randomly(chan))
         loop.create_task(tick_every_second())
+        loop.create_task(publish_randomly(chan))
 
 
 Before we can publish messages to the broker, we first need to connect to it using the ``mooq.connect()`` function. `mooq` will raise an exception if it cannot connect to the broker. 
@@ -67,11 +73,12 @@ The `publish_randomly()` coroutine looks like this::
 
     async def publish_randomly(chan):
         while True:
-            await chan.publish(exchange_name="in2com_log",
-                               msg="Hello World!",
-                               routing_key="greetings")
-            print("published!")
+            await chan.publish(
+                    exchange_name="in2com_log",
+                    msg="Hello World!",
+                    routing_key="greetings")
 
+            print("published!")
             await asyncio.sleep(random.randint(1,10))
 
 In `mooq` messages are published at the channel level and messages are consumed at the connection level. We've found this fits in best with asyncio apps. Invoking ``chan.publish()`` sends a "Hello World!" message with a routing key of "greetings" to the "in2com_log" exchange. Messages must be json serialisable.
@@ -95,41 +102,7 @@ Finally, to run the microservice from the command line, we add statements to get
 
 Final `hello.py` source::
 
-    import mooq
-    import asyncio
-    import random
-
-    async def main():
-        conn = await mooq.connect(host="localhost",
-                                  port=5672,
-                                  broker="rabbit")
-        chan = await conn.create_channel()
-
-        await chan.register_producer(exchange_name="in2com_log",
-                                     exchange_type="direct")
-
-        loop.create_task(tick_every_second())
-        loop.create_task(publish_randomly(chan))
-
-    async def tick_every_second():
-        cnt = 0
-        while True:
-            print("tick hello {}".format(cnt))
-            cnt = cnt + 1
-            await asyncio.sleep(1)
-
-    async def publish_randomly(chan):
-        while True:
-            await chan.publish(exchange_name="in2com_log",
-                               msg="Hello World!",
-                               routing_key="greetings")
-            print("published!")
-
-            await asyncio.sleep(random.randint(1,10))
-
-    loop = asyncio.get_event_loop()
-    loop.create_task(main())
-    loop.run_forever()
+.. literalinclude:: ../examples/hello.py
 
 
 loud.py
@@ -154,15 +127,18 @@ The `main()` coroutine looks like this::
         print(resp['msg'].upper())
 
     async def main(loop):
-        conn = await mooq.connect(host="localhost",
-                                  port=5672,
-                                  broker="rabbit")
+        conn = await mooq.connect(
+                        host="localhost",
+                        port=5672,
+                        broker="rabbit")
+
         chan = await conn.create_channel()
 
-        await chan.register_consumer( exchange_name="in2com_log",
-                                      exchange_type="direct",
-                                      routing_keys=["greetings","goodbyes"],
-                                      callback = yell_it)
+        await chan.register_consumer( 
+                exchange_name="in2com_log",
+                exchange_type="direct",
+                routing_keys=["greetings","goodbyes"],
+                callback = yell_it)
 
         loop.create_task(tick_every_second())
         loop.create_task(conn.process_events())
@@ -182,44 +158,14 @@ Lastly, we schedule a task to run ``conn.process_events()`` that listens for all
 Finally, as per `hello.py`, to run the microservice from the command line, we add statements to get the event loop, schedule the main coroutine and then run the event loop::
 
     loop = asyncio.get_event_loop()
-    loop.create_task(main())
+    loop.create_task(main(loop))
     loop.run_forever()
 
 Final `loud.py` source::
 
-    import mooq
-    import asyncio
 
-    #the callback to run
-    async def yell_it(resp):
-        print(resp['msg'].upper())
+.. literalinclude:: ../examples/loud.py
 
-    async def main(loop):
-        conn = await mooq.connect(host="localhost",
-                            port=5672,
-                            broker="rabbit")
-        chan = await conn.create_channel()
-
-        await chan.register_consumer( queue_name="my_queue",
-                                exchange_name="in2com_log",
-                                exchange_type="direct",
-                                routing_keys=["greetings","goodbyes"],
-                                callback = yell_it)
-
-        loop.create_task(tick_every_second())
-        loop.create_task(conn.process_events())
-
-
-    async def tick_every_second():
-        cnt = 0
-        while True:
-            print("tick loud {}".format(cnt))
-            cnt = cnt + 1
-            await asyncio.sleep(1)
-
-    loop = asyncio.get_event_loop()
-    loop.create_task(main(loop))
-    loop.run_forever()
 
 Running
 ---------
