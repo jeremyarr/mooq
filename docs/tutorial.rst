@@ -163,7 +163,6 @@ Finally, as per `hello.py`, to run the microservice from the command line, we ad
 
 Final `loud.py` source:
 
-
 .. literalinclude:: ../examples/loud.py
 
 
