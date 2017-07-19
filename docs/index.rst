@@ -48,8 +48,7 @@ Creating a connection::
     conn = await mooq.connect(
                 host="localhost",
                 port=5672, 
-                broker="rabbit"
-                )
+                broker="rabbit")
 
 Creating a channel of the connection::
 
@@ -59,8 +58,7 @@ Registering a producer::
 
     await chan.register_producer(
             exchange_name="log",
-            exchange_type="direct"
-            )
+            exchange_type="direct")
 
 Registering a consumer and associated callback::
 
@@ -68,12 +66,10 @@ Registering a consumer and associated callback::
         print(resp['msg'].upper())
 
     await chan.register_consumer( 
-            queue_name="my_queue",
             exchange_name="log", 
             exchange_type="direct",
             routing_keys=["greetings","goodbyes"],
-            callback = yell_it
-            )
+            callback = yell_it)
 
 Publishing a message::
 

@@ -1,35 +1,40 @@
-  import mooq
-  import asyncio
-  import random
+import mooq
+import asyncio
+import random
 
-  async def main():
-      conn = await mooq.connect(host="localhost",
-                                port=5672,
-                                broker="rabbit")
-      chan = await conn.create_channel()
+async def main():
+    conn = await mooq.connect(
+            host="localhost",
+            port=5672,
+            broker="rabbit")
 
-      await chan.register_producer(exchange_name="in2com_log",
-                                   exchange_type="direct")
+    chan = await conn.create_channel()
 
-      loop.create_task(tick_every_second())
-      loop.create_task(publish_randomly(chan))
+    await chan.register_producer(
+            exchange_name="in2com_log",
+            exchange_type="direct")
 
-  async def tick_every_second():
-      cnt = 0
-      while True:
-          print("tick hello {}".format(cnt))
-          cnt = cnt + 1
-          await asyncio.sleep(1)
+    loop.create_task(tick_every_second())
+    loop.create_task(publish_randomly(chan))
 
-  async def publish_randomly(chan):
-      while True:
-          await chan.publish(exchange_name="in2com_log",
-                             msg="Hello World!",
-                             routing_key="greetings")
-          print("published!")
+async def tick_every_second():
+    cnt = 0
+    while True:
+        print("tick hello {}".format(cnt))
+        cnt = cnt + 1
+        await asyncio.sleep(1)
 
-          await asyncio.sleep(random.randint(1,10))
+async def publish_randomly(chan):
+    while True:
+        await chan.publish(
+                exchange_name="in2com_log",
+                msg="Hello World!",
+                routing_key="greetings")
 
-  loop = asyncio.get_event_loop()
-  loop.create_task(main())
-  loop.run_forever()
+        print("published!")
+        await asyncio.sleep(random.randint(1,10))
+
+
+loop = asyncio.get_event_loop()
+loop.create_task(main())
+loop.run_forever()
