@@ -1,3 +1,5 @@
+.. _examples:
+
 Examples
 ==========
 
@@ -9,51 +11,54 @@ Examples
 Direct
 --------
 
-Consumer:
+hello.py:
 
-- An asyncio app that prints a 'tick' message every second and processes messages from RabbitMQ at the same time.
+- Prints a 'tick' message every second and publishes messages to a RabbitMQ at the same time.
 
-.. literalinclude:: ../examples/direct_consumer.py
+.. literalinclude:: ../examples/hello.py
 
 
-Producer:
+loud.py:
 
-- An asyncio app that prints a 'tick' message every second and publishes messages to a RabbitMQ at the same time.
+- Prints a 'tick' message every second and processes messages from RabbitMQ at the same time.
 
-.. literalinclude:: ../examples/direct_consumer.py
+.. literalinclude:: ../examples/loud.py
 
 Terminal 1:
 
 .. code-block:: bash
-    
-    $ python direct_consumer.py
+
+    $ python hello.py
 
 .. code-block:: console
 
-    waiting for first event...
-    tick consumer app 1
-    HELLO WORLD!
-    tick consumer app 2
-    tick consumer app 3
-    tick consumer app 4
-    tick consumer app 5
-    HELLO WORLD!
-    tick consumer app 6
+    tick hello 0
+    published!
+    tick hello 1
+    tick hello 2
+    published!
+    tick hello 3
+    tick hello 4
+    tick hello 5
+    published!
+    tick hello 6
 
 
 Terminal 2:
 
 .. code-block:: bash
-    
-    $ python direct_producer.py
+
+    $ python loud.py
 
 .. code-block:: console
 
-    tick producer app 1
-    published!
-    tick producer app 2
-    tick producer app 3
-    tick producer app 4
-    tick producer app 5
-    published!
-    tick producer app 6
+    tick loud 0
+    HELLO WORLD!
+    tick loud 1
+    tick loud 2
+    HELLO WORLD!
+    tick loud 3
+    tick loud 4
+    tick loud 5
+    HELLO WORLD!
+    tick loud 6
