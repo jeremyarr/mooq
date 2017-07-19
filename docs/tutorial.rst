@@ -100,7 +100,7 @@ Finally, to run the microservice from the command line, we add statements to get
     loop.create_task(main())
     loop.run_forever()
 
-Final `hello.py` source::
+Final `hello.py` source:
 
 .. literalinclude:: ../examples/hello.py
 
@@ -161,7 +161,7 @@ Finally, as per `hello.py`, to run the microservice from the command line, we ad
     loop.create_task(main(loop))
     loop.run_forever()
 
-Final `loud.py` source::
+Final `loud.py` source:
 
 
 .. literalinclude:: ../examples/loud.py
