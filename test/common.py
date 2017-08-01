@@ -23,9 +23,8 @@ class TransportTestCase(unittest.TestCase):
 
     async def GIVEN_InMemoryBrokerStarted(self,host,port):
         self.broker = mooq.InMemoryBroker(host=host,port=port)
-        is_running_fut = self.loop.create_future()
-        self.loop.create_task(self.broker.run(is_running_fut))
-        await is_running_fut
+        _, launched = self.create_task(self.broker.run())
+        await launched
 
     @classmethod
     def GIVEN_RabbitMQBrokerStarted(cls,host,port):
@@ -118,3 +117,28 @@ class TransportTestCase(unittest.TestCase):
 
     async def CloseBroker(self):
         await self.broker.close()
+
+    def create_task(self,coro_obj):
+        '''
+        wrapper for creating a task that can be used for waiting
+        until a task has started.
+
+        :param coro_obj: coroutine object to schedule
+        :param loop: event loop
+        :returns: a two element tuple where the first element
+            is the task object. Awaiting on this will return when
+            the coroutine object is done executing. The second element
+            is a future that becomes done when the coroutine object is started.
+
+        .. note:: must only be called from within the thread
+            where the event loop resides
+        '''
+
+        loop = asyncio.get_event_loop()
+
+        async def task_wrapper(coro_obj, launched):
+            launched.set_result(True)
+            await coro_obj
+
+        launched = loop.create_future()
+        return loop.create_task(task_wrapper(coro_obj, launched)), launched
