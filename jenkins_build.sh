@@ -16,10 +16,10 @@ pip install -r requirements_dev.txt
 
 echo "performing test"
 
-coverage run --source=mooq run_tests.py --unit --integration --output xml --dist ubuntu
+./env/bin/coverage run --source=mooq run_tests.py --unit --integration --output xml --dist ubuntu
 
-coverage xml
-coverage html
+./env/bin/coverage xml
+./env/bin/coverage html
 
 echo "removing virtualenv"
 

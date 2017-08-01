@@ -1,3 +1,4 @@
+coverage
 xmlrunner
 -e git+git@github.com:jeremyarr/younit.git@master#egg=younit
 pika
