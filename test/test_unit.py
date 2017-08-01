@@ -7,11 +7,12 @@ import asyncio
 
 import xmlrunner
 
+
 from test import common
-from test.unittest_utils import set_test_hang_alarm
-from test.unittest_utils import clear_test_hang_alarm
-from test.unittest_utils import close_all_threads
-from test.unittest_utils import asyncio_test, AsyncMock
+from younit import set_test_hang_alarm
+from younit import clear_test_hang_alarm
+from younit import close_all_threads
+from younit import asyncio_test, AsyncMock
 
 import mooq
 

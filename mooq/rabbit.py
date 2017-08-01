@@ -25,14 +25,11 @@ class RabbitMQBroker(base.Broker):
         else:
             raise ValueError("TEST_DISTRIBUTION environmental variable not set to either arch or ubuntu")
 
-    async def run(self, is_running=None):
+    async def run(self):
         '''
         Restarts the RabbitMQ broker using a method derived from the TEST_DISTRIBUTION
         environmental variable.
 
-        :param is_running: A future set to done once the broker is confirmed
-            as being running
-        :type is_running: future
 
         If TEST_DISTRIBUTION=="arch", will try to restart rabbitmq using the linux ``systemctl``
         command.
@@ -50,8 +47,6 @@ class RabbitMQBroker(base.Broker):
 
         await self.loop.run_in_executor(None, self._run)
         await asyncio.sleep(20)
-        if is_running:
-            is_running.set_result(None)
 
 
 class RabbitMQConnection(base.Connection):
@@ -222,6 +217,8 @@ class RabbitMQChannel(base.Channel):
         Decorator to turn a pika callback running outside the
         main thread into a coroutine running in the main thread
         with simplified arguments.
+
+        TODO: return routing key as well in resp dictionary
         '''
 
         def thread_callback(ch, meth, prop, body):

@@ -8,7 +8,7 @@ import xmlrunner
 
 import mooq
 from test import common
-from test.unittest_utils import asyncio_test
+from younit import asyncio_test
 
 # @unittest.skip("skipped")
 class RabbitMQDirectProduceConsumeTest(common.TransportTestCase):

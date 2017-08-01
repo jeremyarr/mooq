@@ -88,13 +88,12 @@ class Broker(object):
         '''
         raise NotImplementedError
 
-    async def run(self, is_running=None):
+    async def run(self):
         '''
         restarts the broker
 
         :param is_running: A future set to done once the broker is confirmed
             as being running
-        :type is_running: future
 
         :raises: NotImplementedError
         '''

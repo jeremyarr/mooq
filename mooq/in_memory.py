@@ -31,19 +31,14 @@ class InMemoryBroker(base.Broker):
         self.broker_ctl_q.put("close", block=False)
         await self.not_running
 
-    async def run(self, is_running=None):
+    async def run(self):
         '''
         restarts the broker
 
         :param is_running: A future set to done once the broker is confirmed
             as being running
-        :type is_running: future
         '''
 
-        if not is_running:
-            raise ValueError("is running future must be supplied as keyword argument")
-
-        is_running.set_result(None)
         self.not_running = self.loop.create_future()
         while True:
             try:
