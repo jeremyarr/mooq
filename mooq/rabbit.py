@@ -125,7 +125,15 @@ class RabbitMQConnection(base.Connection):
         '''
         loop = asyncio.get_event_loop()
         func = partial(self._process_events, num_cycles=num_cycles)
-        await loop.run_in_executor(None, func)
+        fut = loop.run_in_executor(None, func)
+        done, pending = await asyncio.wait([fut],timeout=0.2)
+        if pending:
+            print("warning process_events timeout")
+            t1 = time.time()
+            await pending.pop()
+            t2 = time.time()
+            print("slow process_events: took {0:.4f} seconds".format(t2-t1))
+
 
 
 class RabbitMQChannel(base.Channel):
@@ -158,7 +166,8 @@ class RabbitMQChannel(base.Channel):
         await loop.run_in_executor(None, func)
 
     @base.lock_channel
-    def _register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, routing_keys=[""]):
+    def _register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, 
+            routing_keys=[""], create_task_meth=None):
         self._chan.exchange_declare(exchange=exchange_name,
                                     type=exchange_type)
 
@@ -175,7 +184,7 @@ class RabbitMQChannel(base.Channel):
                                   queue=queue_name,
                                   routing_key=r)
 
-        pika_callback = self._wrap_callback(callback)
+        pika_callback = self._wrap_callback(callback, create_task_meth=create_task_meth)
         self._chan.basic_consume(pika_callback,
                                  queue=queue_name,
                                  no_ack=True,
@@ -183,7 +192,8 @@ class RabbitMQChannel(base.Channel):
                                  consumer_tag=None,
                                  arguments=None)
 
-    async def register_consumer(self, queue_name=None, routing_keys=[""], *, exchange_name, exchange_type, callback):
+    async def register_consumer(self, queue_name=None, routing_keys=[""], *, exchange_name, exchange_type, 
+                callback, create_task_meth=None):
         '''
         Register a consumer on the RabbitMQ channel.
 
@@ -208,11 +218,11 @@ class RabbitMQChannel(base.Channel):
         loop = asyncio.get_event_loop()
         func = partial(self._register_consumer, exchange_name=exchange_name,
                        exchange_type=exchange_type, queue_name=queue_name,
-                       callback=callback, routing_keys=routing_keys)
+                       callback=callback, routing_keys=routing_keys, create_task_meth=create_task_meth)
 
         await loop.run_in_executor(None, func)
 
-    def _wrap_callback(self, async_callback):
+    def _wrap_callback(self, async_callback, create_task_meth=None):
         '''
         Decorator to turn a pika callback running outside the
         main thread into a coroutine running in the main thread
@@ -226,8 +236,10 @@ class RabbitMQChannel(base.Channel):
                 resp = {
                     "msg": json.loads(body),
                 }
-
-                return base.create_task(async_callback(resp), self.loop)
+                if not create_task_meth:
+                    return base.create_task(async_callback(resp), self.loop)
+                else:
+                    return create_task_meth(async_callback(resp))
 
             return self.loop.call_soon_threadsafe(main_loop_callback, ch, meth, prop, body)
 
