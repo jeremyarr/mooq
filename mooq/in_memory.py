@@ -360,7 +360,8 @@ class InMemoryChannel(base.Channel):
         await self._handle_broker_responses()
 
     # @base.lock_channel
-    async def register_consumer(self, queue_name=None, routing_keys=[""], *, exchange_name, exchange_type, callback):
+    async def register_consumer(self, queue_name=None, routing_keys=[""], *, exchange_name, exchange_type, 
+                callback, create_task_meth=None):
         '''
         Register a consumer on the channel.
 
