@@ -166,17 +166,19 @@ class Connection(object):
     '''
     Base class for a connection to a broker. Not to be used directly.
     '''
-    def __init__(self, *, host, port):
+    def __init__(self, *, host, port,vitual_host=None):
         '''
         :param host: the hostname of the broker you wish to connect to
         :type host: str
         :param port: the port of the broker you wish to connect to
         :type port: int
-
+        :param virtual_host: the virtual host broker you wish to connect to
+        :type virtual_host: str
         .. note:: must call :meth:`connect` to actually connect to the broker
         '''
         self.host = host
         self.port = port
+        self.virtual_host = virtual_host
         self.conn_lock = _TimeoutRLock(1)
         self.connected = False
         self.channels = []

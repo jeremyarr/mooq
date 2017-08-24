@@ -67,7 +67,7 @@ class RabbitMQConnection(base.Connection):
         self.channel_resource_constructor_func = RabbitMQChannel
 
     def _connect(self):
-        cp = pika.ConnectionParameters(host=self.host, port=self.port)
+        cp = pika.ConnectionParameters(host=self.host, port=self.port, virtual_host=self.virtual_host)
         self._conn = pika.BlockingConnection(cp)
 
     async def connect(self):
