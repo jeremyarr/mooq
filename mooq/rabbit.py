@@ -69,10 +69,13 @@ class RabbitMQConnection(base.Connection):
         self.channel_resource_constructor_func = RabbitMQChannel
 
     def _connect(self):
+        credentials = pika.credentials.PlainCredentials(self.user, self.passwd)
         if not self.ssl:
-            cp = pika.ConnectionParameters(host=self.host, port=self.port, virtual_host=self.virtual_host)
+            cp = pika.ConnectionParameters(host=self.host,
+                     port=self.port, 
+                     virtual_host=self.virtual_host,
+                     credentials=credentials)
         else:
-            credentials = pika.credentials.PlainCredentials(self.user,self.passwd)
             cp = pika.ConnectionParameters(
                 ssl=True,
                 ssl_options=dict(

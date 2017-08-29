@@ -168,8 +168,8 @@ class Connection(object):
     '''
     def __init__(self, *, 
         host, port,
-        virtual_host=None, user=None,
-        passwd=None, ca_certs=None, ssl=False):
+        virtual_host=None, user="guest",
+        passwd="guest", ca_certs=None, ssl=False):
         '''
         :param host: the hostname of the broker you wish to connect to
         :type host: str
