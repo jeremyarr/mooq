@@ -166,7 +166,10 @@ class Connection(object):
     '''
     Base class for a connection to a broker. Not to be used directly.
     '''
-    def __init__(self, *, host, port,vitual_host=None):
+    def __init__(self, *, 
+        host, port,
+        virtual_host=None, user=None,
+        passwd=None, ca_certs=None, ssl=False):
         '''
         :param host: the hostname of the broker you wish to connect to
         :type host: str
@@ -182,6 +185,10 @@ class Connection(object):
         self.conn_lock = _TimeoutRLock(1)
         self.connected = False
         self.channels = []
+        self.user=user
+        self.passwd=passwd
+        self.ca_certs=ca_certs
+        self.ssl = ssl
         self.loop = asyncio.get_event_loop()
 
     async def create_channel(self):

@@ -12,4 +12,4 @@ from .in_memory import InMemoryBroker, InMemoryConnection, InMemoryChannel
 
 from .rabbit import RabbitMQBroker, RabbitMQConnection, RabbitMQChannel
 
-from .connect import connect
+from .connect import connect, ssl_connect

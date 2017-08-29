@@ -4,8 +4,10 @@ import json
 import os
 from functools import wraps, partial
 import asyncio
+import ssl
 
 import pika
+
 
 from . import base
 
@@ -67,7 +69,22 @@ class RabbitMQConnection(base.Connection):
         self.channel_resource_constructor_func = RabbitMQChannel
 
     def _connect(self):
-        cp = pika.ConnectionParameters(host=self.host, port=self.port, virtual_host=self.virtual_host)
+        if not self.ssl:
+            cp = pika.ConnectionParameters(host=self.host, port=self.port, virtual_host=self.virtual_host)
+        else:
+            credentials = pika.credentials.PlainCredentials(self.user,self.passwd)
+            cp = pika.ConnectionParameters(
+                ssl=True,
+                ssl_options=dict(
+                    ssl_version=ssl.PROTOCOL_TLSv1_2,
+                    ca_certs=self.ca_certs,
+                    cert_reqs=ssl.CERT_REQUIRED
+                    ),
+                host=self.host,
+                virtual_host=self.virtual_host,
+                credentials=credentials,
+                port=self.port)
+
         self._conn = pika.BlockingConnection(cp)
 
     async def connect(self):
