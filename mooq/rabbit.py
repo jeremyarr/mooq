@@ -164,7 +164,7 @@ class RabbitMQChannel(base.Channel):
     @base.lock_channel
     def _register_producer(self, *, exchange_name, exchange_type):
         self._chan.exchange_declare(exchange=exchange_name,
-                                    type=exchange_type)
+                                    exchange_type=exchange_type)
 
     async def register_producer(self, *, exchange_name, exchange_type):
         '''
@@ -187,17 +187,18 @@ class RabbitMQChannel(base.Channel):
 
     @base.lock_channel
     def _register_consumer(self, *, exchange_name, exchange_type, queue_name, callback, 
-            routing_keys=[""], create_task_meth=None):
-        self._chan.exchange_declare(exchange=exchange_name,
-                                    type=exchange_type)
+            routing_keys=[""], create_task_meth=None, exclusive=True):
 
-        exclusive = False
+        self._chan.exchange_declare(exchange=exchange_name,
+                                    exchange_type=exchange_type)
+
         if queue_name is None:
+            #override exclusive in this case if it is false
             exclusive = True
             method_frame = self._chan.queue_declare(exclusive=True)
             queue_name = method_frame.method.queue
         else:
-            self._chan.queue_declare(queue=queue_name)
+            self._chan.queue_declare(queue=queue_name, exclusive=exclusive)
 
         for r in routing_keys:
             self._chan.queue_bind(exchange=exchange_name,
@@ -213,7 +214,7 @@ class RabbitMQChannel(base.Channel):
                                  arguments=None)
 
     async def register_consumer(self, queue_name=None, routing_keys=[""], *, exchange_name, exchange_type, 
-                callback, create_task_meth=None):
+                callback, create_task_meth=None, exclusive=True):
         '''
         Register a consumer on the RabbitMQ channel.
 
@@ -238,7 +239,7 @@ class RabbitMQChannel(base.Channel):
         loop = asyncio.get_event_loop()
         func = partial(self._register_consumer, exchange_name=exchange_name,
                        exchange_type=exchange_type, queue_name=queue_name,
-                       callback=callback, routing_keys=routing_keys, create_task_meth=create_task_meth)
+                       callback=callback, routing_keys=routing_keys, create_task_meth=create_task_meth, exclusive=exclusive)
 
         await loop.run_in_executor(None, func)
 
